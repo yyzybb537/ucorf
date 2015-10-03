@@ -21,13 +21,17 @@ namespace ucorf
             return ConnectTo(url, []{ return static_cast<ITransportClient*>(new TransportType); });
         }
 
+        void SetDispatcher(IDispatcher* dispatcher);
+
         bool Call(std::string const& service_name,
                 std::string const& method_name,
                 IMessage *request, IMessage *response);
 
     private:
         typedef std::map<std::string, ITransportClient*> StubMap;
+        StubMap stubs_;
         TransportFactory factory_;
+        IDispatcher *dispatcher_;
     };
 
 } //namespace ucorf

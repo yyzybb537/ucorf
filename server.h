@@ -1,12 +1,17 @@
 #pragma once
 
 #include "preheader.h"
-#include <map>
+#include "transport.h"
 
 namespace ucorf
 {
+    struct Session
+    {
+        SessId sess;
+        ITransportServer *transport;
+    };
+
     class IService;
-    class ITransportServer;
     class Server
     {
     public:
@@ -17,6 +22,9 @@ namespace ucorf
         bool RegisterService(IService* service);
 
         void RemoveService(std::string const& service_name);
+
+    private:
+        void OnMsg(Session sess, IMessage *request);
 
     private:
         typedef std::map<std::string, IService*> ServiceMap;

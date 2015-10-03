@@ -1,6 +1,8 @@
 #pragma once
 
 #include <string>
+#include <map>
+#include <list>
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
 #include <boost/system/error_code.hpp>

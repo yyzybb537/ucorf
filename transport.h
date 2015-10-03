@@ -15,6 +15,7 @@ namespace ucorf
 
         virtual ~TransportBase() {}
 
+        virtual void Shutdown() = 0;
         virtual void SetReceiveCb(OnReceiveF const&) = 0;
         virtual void Send(SessId id, const void* data, size_t bytes, OnSndF const& cb = NULL) = 0;
     };
