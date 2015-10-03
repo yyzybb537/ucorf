@@ -15,12 +15,12 @@ namespace ucorf
     class IDispatcher
     {
     public:
-        typedef std::map<std::string, ITransportClient*> StubMap;
-
         virtual ~IDispatcher() {}
 
-        virtual ITransportClient* Get(StubMap & stubs,
-                std::string const& service_name,
+        virtual void Add(ITransportClient* tp);
+        virtual void Del(ITransportClient* tp);
+
+        virtual ITransportClient* Get( std::string const& service_name,
                 std::string const& method_name, IMessage *request);
     };
 

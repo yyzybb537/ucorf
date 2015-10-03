@@ -12,8 +12,8 @@ namespace ucorf
 
         std::string name() = 0;
 
-        bool CallMethod(std::string const& method,
-                IMessage *request, IMessage *response) = 0;
+        IMessage* CallMethod(std::string const& method,
+                const char *request_data, size_t request_bytes) = 0;
     };
 
     class IServiceStub : public IService

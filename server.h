@@ -2,6 +2,7 @@
 
 #include "preheader.h"
 #include "transport.h"
+#include "message.h"
 
 namespace ucorf
 {
@@ -9,13 +10,20 @@ namespace ucorf
     {
         SessId sess;
         ITransportServer *transport;
+        IHeaderPtr header;
     };
 
     class IService;
     class Server
     {
     public:
-        bool Listen(ITransportServer *transport);
+        typedef boost::function<IMessage*(std::string const&, std::string const&)> MessageFactory;
+
+        Server& Listen(ITransportServer *transport);
+
+        Server& SetHeaderFactory(HeaderFactory const& head_factory);
+
+        Server& SetMessageFactory(MessageFactory const& msg_factory);
 
         Server& RegisterTo(std::string const& url);
 
@@ -24,7 +32,9 @@ namespace ucorf
         void RemoveService(std::string const& service_name);
 
     private:
-        void OnMsg(Session sess, IMessage *request);
+        size_t OnReceiveData(ITransportServer *tp, SessId sess_id, const char* data, size_t bytes);
+
+        void DispatchMsg(Session sess, const char* data, size_t bytes);
 
     private:
         typedef std::map<std::string, IService*> ServiceMap;
@@ -32,6 +42,8 @@ namespace ucorf
 
         ServiceMap services_;
         TransportList transports_;
+        HeaderFactory head_factory_;
+        MessageFactory msg_factory_;
     };
 
 } //namespace ucorf
