@@ -12,6 +12,9 @@
 #include <boost/system/error_code.hpp>
 #include <coroutine/coroutine.h>
 
+// linux
+#include <arpa/inet.h>
+
 namespace ucorf
 {
     using boost_ec = ::boost::system::error_code;

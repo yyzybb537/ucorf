@@ -45,4 +45,31 @@ namespace ucorf
         virtual std::size_t Parse(const void* buf, std::size_t len) = 0;
     };
 
+    struct UcorfHead : public IHeader
+    {
+    public:
+        virtual void SetId(std::size_t id);
+        virtual void SetType(eHeaderType type);
+        virtual void SetFollowBytes(std::size_t bytes);
+        virtual void SetService(std::string const& srv);
+        virtual void SetMethod(std::string const& mthd);
+
+        virtual std::size_t GetId();
+        virtual eHeaderType GetType();
+        virtual std::size_t GetFollowBytes();
+        virtual std::string const& GetService();
+        virtual std::string const& GetMethod();
+
+        virtual bool Serialize(void* buf, std::size_t len);
+        virtual std::size_t ByteSize();
+        virtual std::size_t Parse(const void* buf, std::size_t len);
+
+        static const unsigned char magic_code = 0xf8;
+        uint8_t calltype;
+        uint32_t callid;
+        uint32_t body_length;
+        std::string service;
+        std::string method;
+    };
+
 } //namespace ucorf

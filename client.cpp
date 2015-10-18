@@ -3,10 +3,11 @@
 
 namespace ucorf
 {
-    Client& Client::Init(std::string const& url, TransportFactory const& factory)
+    Client::Client()
+    {}
+
+    Client::~Client()
     {
-        tp_factory_ = factory;
-        // TODO: parse and save url, do zookeeper.
     }
 
     Client& Client::SetOption(Option const& opt)
@@ -17,7 +18,7 @@ namespace ucorf
 
     Client& Client::SetDispatcher(IDispatcher* dispatcher)
     {
-        dispatcher_ = dispatcher;
+        dispatcher_.reset(dispatcher);
         return *this;
     }
 
@@ -27,20 +28,42 @@ namespace ucorf
         return *this;
     }
 
+    Client& Client::SetServerFinder(ServerFinder * srv_finder)
+    {
+        srv_finder_.reset(srv_finder);
+        return *this;
+    }
+
+    Client& Client::SetTransportFactory(TransportFactory const& factory)
+    {
+        tp_factory_ = factory;
+        return *this;
+    }
+
+    Client& Client::SetUrl(std::string const& url)
+    {
+        url_ = url;
+        return *this;
+    }
+
+    bool Client::Start()
+    {
+        is_started_ = true;
+        return srv_finder_->Init(url_, tp_factory_);
+    }
+
     boost_ec Client::Call(std::string const& service_name,
             std::string const& method_name,
             IMessage *request, IMessage *response)
     {
-        ITransportClient *tp = dispatcher_->Get(service_name, method_name, request);
-        if (!tp) {
-            // TODO: if url is ip:port, connect to server
-
+        if (!is_started_) {
             std::unique_lock<co_mutex> lock(connect_mutex_);
-            if (!tp) {
-
+            if (!is_started_) {
+                Start();
             }
         }
 
+        ITransportClient *tp = dispatcher_->Get(service_name, method_name, request);
         if (!tp || !tp->IsEstab()) {
             return MakeUcorfErrorCode(eUcorfErrorCode::ec_no_estab);
         }
