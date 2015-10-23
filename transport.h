@@ -4,8 +4,7 @@
 
 namespace ucorf
 {
-    struct ISessId {};
-    typedef boost::shared_ptr<ISessId> SessId;
+    typedef boost::any SessId;
 
     class ITransport
     {
