@@ -1,5 +1,6 @@
 #include "server.h"
 #include "message.h"
+#include "service.h"
 
 namespace ucorf
 {

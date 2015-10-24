@@ -34,7 +34,7 @@ namespace ucorf
     private:
         size_t OnReceiveData(ITransportServer *tp, SessId sess_id, const char* data, size_t bytes);
 
-        void DispatchMsg(Session sess, const char* data, size_t bytes);
+        bool DispatchMsg(Session sess, const char* data, size_t bytes);
 
     private:
         typedef std::map<std::string, IService*> ServiceMap;

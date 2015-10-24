@@ -1,5 +1,6 @@
 #include "client.h"
 #include "error.h"
+#include "dispatcher.h"
 
 namespace ucorf
 {
@@ -87,7 +88,7 @@ namespace ucorf
             tp->Send(&buf[0], buf.size(), [=](boost_ec const& ec){
                         if (ec) {
                             chan.TryPush(ec);
-                        } else if (opt_.rcv_timout_ms) {
+                        } else if (opt_.rcv_timeout_ms) {
                             // start rcv timer.
                             co_timer_add(std::chrono::milliseconds(opt_.rcv_timeout_ms), [chan]{
                                     chan.TryPush(MakeUcorfErrorCode(eUcorfErrorCode::ec_rcv_timeout));
@@ -97,7 +98,7 @@ namespace ucorf
             ResponseData rsp;
             chan >> rsp;
             if (rsp.ec)
-                return ec;
+                return rsp.ec;
 
             if (rsp.data.empty() || !response->Parse(&rsp.data[0], rsp.data.size()))
                 return MakeUcorfErrorCode(eUcorfErrorCode::ec_parse_error);
@@ -141,8 +142,7 @@ namespace ucorf
             size_t follow_bytes = header->GetFollowBytes();
             if (head_len + follow_bytes > len) break;
 
-            if (!OnResponse(tp, header, buf + head_len, follow_bytes))
-                return -1;
+            OnResponse(tp, header, buf + head_len, follow_bytes);
 
             consume += head_len + follow_bytes;
             buf = data + consume;

@@ -10,6 +10,7 @@ namespace ucorf
 {
     class IServiceStub;
     class ITransportClient;
+    class IDispatcher;
     class Client
     {
     public:

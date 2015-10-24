@@ -14,7 +14,7 @@ namespace ucorf
         typedef boost::function<void(SessId)> OnConnectedF;
         typedef boost::function<void(SessId, boost_ec const&)> OnDisconnectedF;
 
-        virtual ~TransportBase() {}
+        virtual ~ITransport() {}
 
         virtual void Shutdown() = 0;
         virtual void SetReceiveCb(OnReceiveF const&) = 0;

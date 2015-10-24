@@ -2,9 +2,20 @@
 
 namespace ucorf
 {
-    Pb_Message::Pb_Message(::google::protobuf::Message* msg)
-        : msg_(msg)
+    Pb_Message::Pb_Message(::google::protobuf::Message* msg, bool own)
+        : msg_(msg), own_(own)
     {
+    }
+
+    Pb_Message::Pb_Message(std::unique_ptr<::google::protobuf::Message> && msg)
+        : msg_(msg.release()), own_(true)
+    {
+    }
+
+    Pb_Message::~Pb_Message()
+    {
+        if (own_ && msg_)
+            delete msg_;
     }
 
     bool Pb_Message::Serialize(void* buf, std::size_t len)

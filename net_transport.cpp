@@ -9,21 +9,21 @@ namespace ucorf
     }
     void NetTransportServer::SetReceiveCb(OnReceiveF const& cb)
     {
-        s_.SetReceiveCb([=](SessionId sess, const char* data, size_t bytes)
+        s_.SetReceiveCb([=](::network::SessionId sess, const char* data, size_t bytes)
                 {
-                    cb(boost::any(sess), data, bytes);
+                    return cb(boost::any(sess), data, bytes);
                 });
     }
     void NetTransportServer::SetConnectedCb(OnConnectedF const& cb)
     {
-        s_.SetConnectedCb([=](SessionId sess)
+        s_.SetConnectedCb([=](::network::SessionId sess)
                 {
                     cb(boost::any(sess));
                 });
     }
     void NetTransportServer::SetDisconnectedCb(OnDisconnectedF const& cb)
     {
-        s_.SetDisconnectedCb([=](SessionId sess, ::network::boost_ec const& ec)
+        s_.SetDisconnectedCb([=](::network::SessionId sess, ::network::boost_ec const& ec)
                 {
                     cb(boost::any(sess), ec);
                 });
@@ -46,21 +46,21 @@ namespace ucorf
     }
     void NetTransportClient::SetReceiveCb(OnReceiveF const& cb)
     {
-        c_.SetReceiveCb([=](SessionId sess, const char* data, size_t bytes)
+        c_.SetReceiveCb([=](::network::SessionId sess, const char* data, size_t bytes)
                 {
-                    cb(boost::any(sess), data, bytes);
+                    return cb(boost::any(sess), data, bytes);
                 });
     }
     void NetTransportClient::SetConnectedCb(OnConnectedF const& cb)
     {
-        c_.SetConnectedCb([=](SessionId sess)
+        c_.SetConnectedCb([=](::network::SessionId sess)
                 {
                     cb(boost::any(sess));
                 });
     }
     void NetTransportClient::SetDisconnectedCb(OnDisconnectedF const& cb)
     {
-        c_.SetDisconnectedCb([=](SessionId sess, ::network::boost_ec const& ec)
+        c_.SetDisconnectedCb([=](::network::SessionId sess, ::network::boost_ec const& ec)
                 {
                     cb(boost::any(sess), ec);
                 });
@@ -68,14 +68,15 @@ namespace ucorf
 
     bool NetTransportClient::Connect(std::string const& url)
     {
-
+        return !c_.Connect(url);
     }
-    void NetTransportClient::Send(const void* data, size_t bytes, OnSndF const& cb = NULL)
+    void NetTransportClient::Send(const void* data, size_t bytes, OnSndF const& cb)
     {
-
+        c_.Send(data, bytes, cb);
     }
     bool NetTransportClient::IsEstab()
     {
+        c_.GetProtocol()->IsEstab(c_.GetSessId());
     }
 
 } //namespace ucorf
