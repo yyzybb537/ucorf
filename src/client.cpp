@@ -34,6 +34,11 @@ namespace ucorf
     {
         srv_finder_.reset();
         srv_finder_.swap(srv_finder);
+        srv_finder_->SetConnectedCb(boost::bind(&Client::OnConnected, this, _1, _2));
+        srv_finder_->SetReceiveCb(boost::bind(&Client::OnReceiveData, this, _1, _2, _3, _4));
+        srv_finder_->SetDisconnectedCb(boost::bind(&Client::OnDisconnected, this, _1, _2, _3));
+        if (!url_.empty())
+            srv_finder_->Init(url_, tp_factory_);
         return *this;
     }
 
@@ -46,33 +51,20 @@ namespace ucorf
     Client& Client::SetUrl(std::string const& url)
     {
         url_ = url;
+        if (srv_finder_)
+            srv_finder_->Init(url_, tp_factory_);
         return *this;
-    }
-
-    boost_ec Client::Start()
-    {
-        is_started_ = true;
-        srv_finder_->SetConnectedCb(boost::bind(&Client::OnConnected, this, _1, _2));
-        srv_finder_->SetReceiveCb(boost::bind(&Client::OnReceiveData, this, _1, _2, _3, _4));
-        srv_finder_->SetDisconnectedCb(boost::bind(&Client::OnDisconnected, this, _1, _2, _3));
-        return srv_finder_->Init(url_, tp_factory_);
     }
 
     boost_ec Client::Call(std::string const& service_name,
             std::string const& method_name,
             IMessage *request, IMessage *response)
     {
-        if (!is_started_) {
-            std::unique_lock<co_mutex> lock(connect_mutex_);
-            if (!is_started_) {
-                boost_ec ec = Start();
-                if (ec) return ec;
-            }
-        }
-
-        ITransportClient *tp = dispatcher_->Get(service_name, method_name, request);
+        boost::shared_ptr<ITransportClient> tp = dispatcher_->Get(service_name, method_name, request);
         if (!tp) {
-            return MakeUcorfErrorCode(eUcorfErrorCode::ec_no_estab);
+            boost_ec ec = srv_finder_->ReConnect();
+            if (ec) return ec;
+            tp = dispatcher_->Get(service_name, method_name, request);
         }
 
         if (!tp->IsEstab()) {
@@ -93,7 +85,7 @@ namespace ucorf
         if (!response) {
             tp->Send(&buf[0], buf.size());
         } else {
-            auto it = channels_[tp].insert(std::make_pair(msg_id, RspChan(1))).first;
+            auto it = channels_[tp.get()].insert(std::make_pair(msg_id, RspChan(1))).first;
             auto chan = it->second;
             tp->Send(&buf[0], buf.size(), [=](boost_ec const& ec){
                         if (ec) {
@@ -117,15 +109,15 @@ namespace ucorf
         return boost_ec();
     }
 
-    void Client::OnConnected(ITransportClient *tp, SessId sess_id)
+    void Client::OnConnected(boost::shared_ptr<ITransportClient> tp, SessId sess_id)
     {
         dispatcher_->Add(tp);
     }
-    void Client::OnDisconnected(ITransportClient *tp, SessId sess_id, boost_ec const& ec)
+    void Client::OnDisconnected(boost::shared_ptr<ITransportClient> tp, SessId sess_id, boost_ec const& ec)
     {
         dispatcher_->Del(tp);
 
-        auto it_1 = channels_.find(tp);
+        auto it_1 = channels_.find(tp.get());
         if (channels_.end() == it_1) return ;
 
         auto &tp_table = it_1->second;
@@ -134,10 +126,10 @@ namespace ucorf
             kv.second.TryPush(ec);
         }
 
-        channels_.erase(tp);
+        channels_.erase(tp.get());
     }
 
-    size_t Client::OnReceiveData(ITransportClient *tp, SessId sess_id, const char* data, size_t bytes)
+    size_t Client::OnReceiveData(boost::shared_ptr<ITransportClient> tp, SessId sess_id, const char* data, size_t bytes)
     {
         size_t consume = 0;
         const char* buf = data;
@@ -162,10 +154,10 @@ namespace ucorf
         return consume;
     }
 
-    void Client::OnResponse(ITransportClient *tp, IHeaderPtr header, const char* data, size_t bytes)
+    void Client::OnResponse(boost::shared_ptr<ITransportClient> tp, IHeaderPtr header, const char* data, size_t bytes)
     {
         std::size_t msg_id = header->GetId();
-        auto it_1 = channels_.find(tp);
+        auto it_1 = channels_.find(tp.get());
         if (channels_.end() == it_1) return ;
 
         auto &tp_table = it_1->second;

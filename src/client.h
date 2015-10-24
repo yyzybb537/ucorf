@@ -34,14 +34,12 @@ namespace ucorf
         boost_ec Call(std::string const& service_name,
                 std::string const& method_name,
                 IMessage *request, IMessage *response);
-        
-        boost_ec Start();
 
     private:
-        void OnConnected(ITransportClient *tp, SessId sess_id);
-        void OnDisconnected(ITransportClient *tp, SessId sess_id, boost_ec const& ec);
-        size_t OnReceiveData(ITransportClient *tp, SessId sess_id, const char* data, size_t bytes);
-        void OnResponse(ITransportClient *tp, IHeaderPtr header, const char* data, size_t bytes);
+        void OnConnected(boost::shared_ptr<ITransportClient> tp, SessId sess_id);
+        void OnDisconnected(boost::shared_ptr<ITransportClient> tp, SessId sess_id, boost_ec const& ec);
+        size_t OnReceiveData(boost::shared_ptr<ITransportClient> tp, SessId sess_id, const char* data, size_t bytes);
+        void OnResponse(boost::shared_ptr<ITransportClient> tp, IHeaderPtr header, const char* data, size_t bytes);
 
     private:
         struct ResponseData
@@ -59,7 +57,6 @@ namespace ucorf
         typedef std::unordered_map<ITransportClient*, std::unordered_map<std::size_t, RspChan>> ChannelMap;
         StubMap stubs_;
         co_mutex connect_mutex_;
-        bool is_started_ = false;
         std::string url_;
         ChannelMap channels_;
         HeaderFactory head_factory_;

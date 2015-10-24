@@ -1,5 +1,6 @@
 #include "server_finder.h"
 #include <boost/algorithm/string.hpp>
+#include <boost/weak_ptr.hpp>
 #include "error.h"
 
 namespace ucorf
@@ -7,18 +8,22 @@ namespace ucorf
     boost_ec ServerFinder::Init(std::string const& url, TransportFactory const& factory)
     {
         tp_factory_ = factory;
+        url_ = url;
 
-        if (boost::istarts_with(url, "zk://")) {
+        if (boost::istarts_with(url_, "zk://")) {
             // TODO: support zookeeper.
+            mode_ = eMode::zk;
             return MakeUcorfErrorCode(eUcorfErrorCode::ec_unsupport_protocol);
         }
 
         // single connection.
+        mode_ = eMode::single;
         single_tp_.reset(factory());
-        single_tp_->SetConnectedCb([=](SessId id){ on_connect_(single_tp_.get(), id); });
-        single_tp_->SetReceiveCb([=](SessId id, const char* data, size_t len){ return on_receive_(single_tp_.get(), id, data, len); });
-        single_tp_->SetDisconnectedCb([=](SessId id, boost_ec const& ec){ on_disconnect_(single_tp_.get(), id, ec); });
-        return single_tp_->Connect(url);
+        boost::weak_ptr<ITransportClient> weak(single_tp_);
+        single_tp_->SetConnectedCb([=](SessId id){ on_connect_(weak.lock(), id); });
+        single_tp_->SetReceiveCb([=](SessId id, const char* data, size_t len){ return on_receive_(weak.lock(), id, data, len); });
+        single_tp_->SetDisconnectedCb([=](SessId id, boost_ec const& ec){ on_disconnect_(weak.lock(), id, ec); });
+        return single_tp_->Connect(url_);
     }
 
     void ServerFinder::SetConnectedCb(OnConnectedF const& cb)
@@ -34,6 +39,21 @@ namespace ucorf
     void ServerFinder::SetDisconnectedCb(OnDisconnectedF const& cb)
     {
         on_disconnect_ = cb;
+    }
+
+    boost_ec ServerFinder::ReConnect()
+    {
+        if (mode_ == eMode::zk) {
+            // TODO: support zookeeper.
+            return MakeUcorfErrorCode(eUcorfErrorCode::ec_unsupport_protocol);
+        } else if (mode_ == eMode::single) {
+            if (!single_tp_->IsEstab())
+                return single_tp_->Connect(url_);
+
+            return boost_ec();
+        }
+
+        return MakeUcorfErrorCode(eUcorfErrorCode::ec_unsupport_protocol);
     }
 
 } //namespace ucorf

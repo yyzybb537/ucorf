@@ -76,6 +76,8 @@ namespace ucorf
     }
     bool NetTransportClient::IsEstab()
     {
+        auto proto = c_.GetProtocol();
+        if (!proto) return false;
         return c_.GetProtocol()->IsEstab(c_.GetSessId());
     }
 
