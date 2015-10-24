@@ -170,6 +170,7 @@ namespace ucorf
         rsp.data.resize(bytes);
         memcpy(&rsp.data[0], data, bytes);
         chan.TryPush(rsp);
+        tp_table.erase(it_2);
     }
 
 } //namespace ucorf

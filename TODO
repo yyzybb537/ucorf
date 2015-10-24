@@ -1,3 +1,7 @@
 TODO:
+增加调试log模块, 输出链接相关信息
+解决并发超过500导致的频繁错误问题
+增加用户log模块
+
 提供查询RPC直接的srv和interface功能
 提供rpc接口版本号校验, 检验interface签名
