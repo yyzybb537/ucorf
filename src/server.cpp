@@ -4,11 +4,11 @@
 
 namespace ucorf
 {
-    Server& Server::Listen(ITransportServer *transport)
+    Server& Server::BindTransport(std::unique_ptr<ITransportServer> && transport)
     {
         transport->SetReceiveCb(boost::bind(&Server::OnReceiveData,
-                    this, transport, _1, _2, _3));
-        transports_.push_back(transport);
+                    this, transport.get(), _1, _2, _3));
+        transports_.push_back(std::move(transport));
         return *this;
     }
 
@@ -18,19 +18,13 @@ namespace ucorf
         return *this;
     }
 
-    Server& Server::SetMessageFactory(MessageFactory const& msg_factory)
-    {
-        msg_factory_ = msg_factory;
-        return *this;
-    }
-
     Server& Server::RegisterTo(std::string const& url)
     {
         // TODO: zookeeper
         return *this;
     }
 
-    bool Server::RegisterService(IService* service)
+    bool Server::RegisterService(std::shared_ptr<IService> service)
     {
         std::string name = service->name();
         return services_.insert(std::make_pair(name, service)).second;
@@ -74,8 +68,8 @@ namespace ucorf
         auto it = services_.find(srv_name);
         if (services_.end() == it) return false;
 
-        IService *service = it->second;
-        IMessage *response = service->CallMethod(sess.header->GetMethod(), data, bytes);
+        auto &service = it->second;
+        std::unique_ptr<IMessage> response(service->CallMethod(sess.header->GetMethod(), data, bytes));
         if (!response) return true;
 
         // reply

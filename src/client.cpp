@@ -17,9 +17,10 @@ namespace ucorf
         return *this;
     }
 
-    Client& Client::SetDispatcher(IDispatcher* dispatcher)
+    Client& Client::SetDispatcher(std::unique_ptr<IDispatcher> && dispatcher)
     {
-        dispatcher_.reset(dispatcher);
+        dispatcher_.reset();
+        dispatcher_.swap(dispatcher);
         return *this;
     }
 
@@ -29,9 +30,10 @@ namespace ucorf
         return *this;
     }
 
-    Client& Client::SetServerFinder(ServerFinder * srv_finder)
+    Client& Client::SetServerFinder(std::unique_ptr<ServerFinder> && srv_finder)
     {
-        srv_finder_.reset(srv_finder);
+        srv_finder_.reset();
+        srv_finder_.swap(srv_finder);
         return *this;
     }
 
@@ -47,9 +49,12 @@ namespace ucorf
         return *this;
     }
 
-    bool Client::Start()
+    boost_ec Client::Start()
     {
         is_started_ = true;
+        srv_finder_->SetConnectedCb(boost::bind(&Client::OnConnected, this, _1, _2));
+        srv_finder_->SetReceiveCb(boost::bind(&Client::OnReceiveData, this, _1, _2, _3, _4));
+        srv_finder_->SetDisconnectedCb(boost::bind(&Client::OnDisconnected, this, _1, _2, _3));
         return srv_finder_->Init(url_, tp_factory_);
     }
 
@@ -60,12 +65,17 @@ namespace ucorf
         if (!is_started_) {
             std::unique_lock<co_mutex> lock(connect_mutex_);
             if (!is_started_) {
-                Start();
+                boost_ec ec = Start();
+                if (ec) return ec;
             }
         }
 
         ITransportClient *tp = dispatcher_->Get(service_name, method_name, request);
-        if (!tp || !tp->IsEstab()) {
+        if (!tp) {
+            return MakeUcorfErrorCode(eUcorfErrorCode::ec_no_estab);
+        }
+
+        if (!tp->IsEstab()) {
             return MakeUcorfErrorCode(eUcorfErrorCode::ec_no_estab);
         }
 

@@ -25,14 +25,14 @@ namespace ucorf
     class ITransportServer : public ITransport
     {
     public:
-        virtual bool Listen(std::string const& url) = 0;
+        virtual boost_ec Listen(std::string const& url) = 0;
         virtual void Send(SessId id, const void* data, size_t bytes, OnSndF const& cb = NULL) = 0;
     };
 
     class ITransportClient : public ITransport
     {
     public:
-        virtual bool Connect(std::string const& url) = 0;
+        virtual boost_ec Connect(std::string const& url) = 0;
         virtual void Send(const void* data, size_t bytes, OnSndF const& cb = NULL) = 0;
         virtual bool IsEstab() = 0;
     };

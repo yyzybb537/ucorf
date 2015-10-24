@@ -16,6 +16,7 @@ namespace ucorf
         ec_call_error   = 3,
         ec_parse_error  = 4,
         ec_no_estab     = 5,
+        ec_unsupport_protocol   = 6,
     };
 
     class ucorf_error_category

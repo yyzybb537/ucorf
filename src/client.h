@@ -21,11 +21,11 @@ namespace ucorf
 
         Client& SetOption(Option const& opt);
 
-        Client& SetDispatcher(IDispatcher* dispatcher);
+        Client& SetDispatcher(std::unique_ptr<IDispatcher> && dispatcher);
 
         Client& SetHeaderFactory(HeaderFactory const& head_factory);
 
-        Client& SetServerFinder(ServerFinder * srv_finder);
+        Client& SetServerFinder(std::unique_ptr<ServerFinder> && srv_finder);
 
         Client& SetTransportFactory(TransportFactory const& factory);
         
@@ -35,7 +35,7 @@ namespace ucorf
                 std::string const& method_name,
                 IMessage *request, IMessage *response);
         
-        bool Start();
+        boost_ec Start();
 
     private:
         void OnConnected(ITransportClient *tp, SessId sess_id);

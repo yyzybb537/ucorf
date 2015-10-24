@@ -25,7 +25,7 @@ namespace ucorf
                 std::string const& method_name, IMessage *request) = 0;
     };
 
-    class RobinDispatcher
+    class RobinDispatcher : public IDispatcher
     {
     public:
         virtual void Add(ITransportClient* tp);

@@ -13,7 +13,7 @@ namespace ucorf
 
         virtual std::string name() = 0;
 
-        virtual IMessage* CallMethod(std::string const& method,
+        virtual std::unique_ptr<IMessage> CallMethod(std::string const& method,
                 const char *request_data, size_t request_bytes) = 0;
     };
 

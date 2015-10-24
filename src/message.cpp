@@ -69,7 +69,7 @@ namespace ucorf
         if (*(unsigned char*)buf != magic_code) return 0;
         uint16_t service_len = htons(*(uint16_t*)((char*)buf + 10));
         uint16_t method_len = htons(*(uint16_t*)((char*)buf + 12));
-        if (len < 14 + service_len + method_len) return 0;
+        if ((uint16_t)len < 14 + service_len + method_len) return 0;
 
         calltype = *(uint8_t*)((char*)buf + 1);
         callid = htonl(*(uint32_t*)((char*)buf + 2));

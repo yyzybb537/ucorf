@@ -29,7 +29,7 @@ namespace ucorf
                 });
     }
 
-    bool NetTransportServer::Listen(std::string const& url)
+    boost_ec NetTransportServer::Listen(std::string const& url)
     {
         return s_.goStart(url);
     }
@@ -66,9 +66,9 @@ namespace ucorf
                 });
     }
 
-    bool NetTransportClient::Connect(std::string const& url)
+    boost_ec NetTransportClient::Connect(std::string const& url)
     {
-        return !c_.Connect(url);
+        return c_.Connect(url);
     }
     void NetTransportClient::Send(const void* data, size_t bytes, OnSndF const& cb)
     {
@@ -76,7 +76,7 @@ namespace ucorf
     }
     bool NetTransportClient::IsEstab()
     {
-        c_.GetProtocol()->IsEstab(c_.GetSessId());
+        return c_.GetProtocol()->IsEstab(c_.GetSessId());
     }
 
 } //namespace ucorf

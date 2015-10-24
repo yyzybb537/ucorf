@@ -22,6 +22,15 @@ std::string ucorf_error_category::message(int v) const
 
         case (int)eUcorfErrorCode::ec_call_error:
             return "call error";
+
+        case (int)eUcorfErrorCode::ec_parse_error:
+            return "parse error";
+
+        case (int)eUcorfErrorCode::ec_no_estab:
+            return "not estab";
+
+        case (int)eUcorfErrorCode::ec_unsupport_protocol:
+            return "unsupport protocol";
     }
 
     return "";

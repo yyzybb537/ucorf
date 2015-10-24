@@ -1,0 +1,6 @@
+project(test)
+set(CMAKE_CXX_FLAGS "-std=c++11 -g")
+add_executable(server.t server.cpp demo.rpc.cc echo.pb.cc)
+add_executable(client.t client.cpp demo.rpc.cc echo.pb.cc)
+target_link_libraries(server.t "-lucorf -lnetwork -lcoroutine -lprotobuf -lboost_system -lboost_regex -ldl")
+target_link_libraries(client.t "-lucorf -lnetwork -lcoroutine -lprotobuf -lboost_system -lboost_regex -ldl")

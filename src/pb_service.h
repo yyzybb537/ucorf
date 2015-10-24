@@ -14,8 +14,10 @@ namespace ucorf
     public:
         virtual std::string name() = 0;
 
-        IMessage* CallMethod(std::string const& method,
+        std::unique_ptr<IMessage> CallMethod(std::string const& method,
                 const char *request_data, size_t request_bytes) override;
+
+        virtual bool Call(int method_idx, Message & request, Message & response) = 0;
 
         virtual const ServiceDescriptor* GetDescriptor() = 0;
 
@@ -23,10 +25,6 @@ namespace ucorf
                 const MethodDescriptor* method) const;
         const Message& GetResponsePrototype(
                 const MethodDescriptor* method) const;
-
-    protected:
-        typedef bool (Pb_Service::*MethodF)(Message const& request, Message& response);
-        std::vector<MethodF> methods_;
     };
 
     class Pb_ServiceStub : public IServiceStub

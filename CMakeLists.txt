@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 2.8)
 project(ucorf)
-set(CMAKE_CXX_FLAGS "-std=c++11 -g")
+set(CMAKE_CXX_FLAGS "-std=c++11 -g -Wall -Werror")
 aux_source_directory(${PROJECT_SOURCE_DIR}/src SRC_LIST)
 add_library(ucorf ${SRC_LIST})
+
+set(CMAKE_INSTALL_PREFIX "/usr/local")
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/src/ DESTINATION "include/ucorf" PATTERN *.h)
+install(FILES ${PROJECT_BINARY_DIR}/libucorf.a DESTINATION "lib")

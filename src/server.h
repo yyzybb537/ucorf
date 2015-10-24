@@ -19,15 +19,13 @@ namespace ucorf
     public:
         typedef boost::function<IMessage*(std::string const&, std::string const&)> MessageFactory;
 
-        Server& Listen(ITransportServer *transport);
+        Server& BindTransport(std::unique_ptr<ITransportServer> && transport);
 
         Server& SetHeaderFactory(HeaderFactory const& head_factory);
 
-        Server& SetMessageFactory(MessageFactory const& msg_factory);
-
         Server& RegisterTo(std::string const& url);
 
-        bool RegisterService(IService* service);
+        bool RegisterService(std::shared_ptr<IService> service);
 
         void RemoveService(std::string const& service_name);
 
@@ -37,13 +35,12 @@ namespace ucorf
         bool DispatchMsg(Session sess, const char* data, size_t bytes);
 
     private:
-        typedef std::map<std::string, IService*> ServiceMap;
-        typedef std::list<ITransportServer*> TransportList;
+        typedef std::map<std::string, std::shared_ptr<IService>> ServiceMap;
+        typedef std::list<std::unique_ptr<ITransportServer>> TransportList;
 
         ServiceMap services_;
         TransportList transports_;
         HeaderFactory head_factory_;
-        MessageFactory msg_factory_;
     };
 
 } //namespace ucorf
