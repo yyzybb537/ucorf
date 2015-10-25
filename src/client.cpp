@@ -1,19 +1,23 @@
 #include "client.h"
 #include "error.h"
 #include "dispatcher.h"
+#include "logger.h"
 
 namespace ucorf
 {
     Client::Client()
+        : opt_(new Option)
     {}
 
     Client::~Client()
     {
     }
 
-    Client& Client::SetOption(Option const& opt)
+    Client& Client::SetOption(boost::shared_ptr<Option> opt)
     {
         opt_ = opt;
+        if (srv_finder_)
+            srv_finder_->SetOption(opt_);
         return *this;
     }
 
@@ -37,6 +41,7 @@ namespace ucorf
         srv_finder_->SetConnectedCb(boost::bind(&Client::OnConnected, this, _1, _2));
         srv_finder_->SetReceiveCb(boost::bind(&Client::OnReceiveData, this, _1, _2, _3, _4));
         srv_finder_->SetDisconnectedCb(boost::bind(&Client::OnDisconnected, this, _1, _2, _3));
+        srv_finder_->SetOption(opt_);
         if (!url_.empty())
             srv_finder_->Init(url_, tp_factory_);
         return *this;
@@ -90,15 +95,16 @@ namespace ucorf
             tp->Send(&buf[0], buf.size(), [=](boost_ec const& ec){
                         if (ec) {
                             chan.TryPush(ec);
-                        } else if (opt_.rcv_timeout_ms) {
+                        } else if (opt_->rcv_timeout_ms) {
                             // start rcv timer.
-                            co_timer_add(std::chrono::milliseconds(opt_.rcv_timeout_ms), [chan]{
+                            co_timer_add(std::chrono::milliseconds(opt_->rcv_timeout_ms), [chan]{
                                     chan.TryPush(MakeUcorfErrorCode(eUcorfErrorCode::ec_rcv_timeout));
                                 });
                         }
                     });
             ResponseData rsp;
             chan >> rsp;
+            channels_[tp.get()].erase(msg_id);
             if (rsp.ec)
                 return rsp.ec;
 
@@ -158,11 +164,19 @@ namespace ucorf
     {
         std::size_t msg_id = header->GetId();
         auto it_1 = channels_.find(tp.get());
-        if (channels_.end() == it_1) return ;
+        if (channels_.end() == it_1) {
+            ucorf_log_warn("discard response because connection was disconnected. srv=%s, method=%s, msgid=%llu",
+                    header->GetService().c_str(), header->GetMethod().c_str(), (unsigned long long)header->GetId());
+            return ;
+        }
 
         auto &tp_table = it_1->second;
         auto it_2 = tp_table.find(msg_id);
-        if (tp_table.end() == it_2) return ;
+        if (tp_table.end() == it_2) {
+            ucorf_log_warn("discard response because stub was timeout. srv=%s, method=%s, msgid=%llu",
+                    header->GetService().c_str(), header->GetMethod().c_str(), (unsigned long long)header->GetId());
+            return ;
+        }
 
         auto &chan = it_2->second;
         ResponseData rsp;
@@ -170,7 +184,6 @@ namespace ucorf
         rsp.data.resize(bytes);
         memcpy(&rsp.data[0], data, bytes);
         chan.TryPush(rsp);
-        tp_table.erase(it_2);
     }
 
 } //namespace ucorf

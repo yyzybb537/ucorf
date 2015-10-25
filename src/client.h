@@ -19,7 +19,7 @@ namespace ucorf
         Client();
         ~Client();
 
-        Client& SetOption(Option const& opt);
+        Client& SetOption(boost::shared_ptr<Option> opt);
 
         Client& SetDispatcher(std::unique_ptr<IDispatcher> && dispatcher);
 
@@ -64,7 +64,7 @@ namespace ucorf
         std::unique_ptr<ServerFinder> srv_finder_;
         std::unique_ptr<IDispatcher> dispatcher_;
         std::atomic<std::size_t> msg_id_{0};
-        Option opt_;
+        boost::shared_ptr<Option> opt_;
     };
 
 } //namespace ucorf

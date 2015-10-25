@@ -1,4 +1,5 @@
 #include "net_transport.h"
+#include "logger.h"
 
 namespace ucorf
 {
@@ -18,6 +19,7 @@ namespace ucorf
     {
         s_.SetConnectedCb([=](::network::SessionId sess)
                 {
+                    ucorf_log_debug("new connection");
                     cb(boost::any(sess));
                 });
     }
@@ -25,8 +27,17 @@ namespace ucorf
     {
         s_.SetDisconnectedCb([=](::network::SessionId sess, ::network::boost_ec const& ec)
                 {
+                    ucorf_log_debug("connection disconnect: %s", ec.message().c_str());
                     cb(boost::any(sess), ec);
                 });
+    }
+
+    void NetTransportServer::SetOption(boost::any const& opt)
+    {
+        if (opt.empty()) return ;
+        ::network::OptionsUser const& data = boost::any_cast<::network::OptionsUser const&>(opt);
+        s_.SetSndTimeout(data.sndtimeo_);
+        s_.SetMaxPackSize(data.max_pack_size_);
     }
 
     boost_ec NetTransportServer::Listen(std::string const& url)
@@ -55,6 +66,7 @@ namespace ucorf
     {
         c_.SetConnectedCb([=](::network::SessionId sess)
                 {
+                    ucorf_log_debug("connect sucess");
                     cb(boost::any(sess));
                 });
     }
@@ -62,8 +74,16 @@ namespace ucorf
     {
         c_.SetDisconnectedCb([=](::network::SessionId sess, ::network::boost_ec const& ec)
                 {
+                    ucorf_log_debug("disconnect because: %s", ec.message().c_str());
                     cb(boost::any(sess), ec);
                 });
+    }
+    void NetTransportClient::SetOption(boost::any const& opt)
+    {
+        if (opt.empty()) return ;
+        ::network::OptionsUser const& data = boost::any_cast<::network::OptionsUser const&>(opt);
+        c_.SetSndTimeout(data.sndtimeo_);
+        c_.SetMaxPackSize(data.max_pack_size_);
     }
 
     boost_ec NetTransportClient::Connect(std::string const& url)

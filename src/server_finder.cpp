@@ -5,6 +5,10 @@
 
 namespace ucorf
 {
+    ServerFinder::ServerFinder()
+        : opt_(new Option)
+    {}
+
     boost_ec ServerFinder::Init(std::string const& url, TransportFactory const& factory)
     {
         tp_factory_ = factory;
@@ -19,6 +23,8 @@ namespace ucorf
         // single connection.
         mode_ = eMode::single;
         single_tp_.reset(factory());
+        if (!opt_->transport_opt.empty())
+            single_tp_->SetOption(opt_->transport_opt);
         boost::weak_ptr<ITransportClient> weak(single_tp_);
         single_tp_->SetConnectedCb([=](SessId id){ on_connect_(weak.lock(), id); });
         single_tp_->SetReceiveCb([=](SessId id, const char* data, size_t len){ return on_receive_(weak.lock(), id, data, len); });
@@ -39,6 +45,11 @@ namespace ucorf
     void ServerFinder::SetDisconnectedCb(OnDisconnectedF const& cb)
     {
         on_disconnect_ = cb;
+    }
+
+    void ServerFinder::SetOption(boost::shared_ptr<Option> opt)
+    {
+        opt_ = opt;
     }
 
     boost_ec ServerFinder::ReConnect()

@@ -13,6 +13,7 @@ namespace ucorf
         virtual void SetReceiveCb(OnReceiveF const&);
         virtual void SetConnectedCb(OnConnectedF const&);
         virtual void SetDisconnectedCb(OnDisconnectedF const&);
+        virtual void SetOption(boost::any const& opt);
 
         virtual boost_ec Listen(std::string const& url);
         virtual void Send(SessId id, const void* data, size_t bytes, OnSndF const& cb = NULL);
@@ -28,6 +29,7 @@ namespace ucorf
         virtual void SetReceiveCb(OnReceiveF const&);
         virtual void SetConnectedCb(OnConnectedF const&);
         virtual void SetDisconnectedCb(OnDisconnectedF const&);
+        virtual void SetOption(boost::any const& opt);
 
         virtual boost_ec Connect(std::string const& url);
         virtual void Send(const void* data, size_t bytes, OnSndF const& cb = NULL);

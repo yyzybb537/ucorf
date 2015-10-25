@@ -1,14 +1,35 @@
 #include "server.h"
 #include "message.h"
 #include "service.h"
+#include "logger.h"
 
 namespace ucorf
 {
+    Server::Server()
+        : opt_(new Option)
+    {
+    }
+
     Server& Server::BindTransport(std::unique_ptr<ITransportServer> && transport)
     {
+        if (!opt_->transport_opt.empty())
+            transport->SetOption(opt_->transport_opt);
+
         transport->SetReceiveCb(boost::bind(&Server::OnReceiveData,
                     this, transport.get(), _1, _2, _3));
+        transport->SetConnectedCb(boost::bind(&Server::OnConnected,
+                    this, transport.get(), _1));
+        transport->SetDisconnectedCb(boost::bind(&Server::OnDisconnected,
+                    this, transport.get(), _1, _2));
         transports_.push_back(std::move(transport));
+        return *this;
+    }
+
+    Server& Server::SetOption(boost::shared_ptr<Option> opt)
+    {
+        opt_ = opt;
+        for (auto &p:transports_)
+            p->SetOption(opt_);
         return *this;
     }
 
@@ -33,6 +54,18 @@ namespace ucorf
     void Server::RemoveService(std::string const& service_name)
     {
         services_.erase(service_name);
+    }
+
+    void Server::OnConnected(ITransportServer *tp, SessId sess_id)
+    {
+        (void)tp;
+        (void)sess_id;
+    }
+    void Server::OnDisconnected(ITransportServer *tp, SessId sess_id, boost_ec const& ec)
+    {
+        (void)tp;
+        (void)sess_id;
+        (void)ec;
     }
 
     size_t Server::OnReceiveData(ITransportServer *tp, SessId sess_id, const char* data, size_t bytes)
@@ -78,8 +111,19 @@ namespace ucorf
             std::vector<char> buf;
             buf.resize(sess.header->ByteSize() + response->ByteSize());
             sess.header->Serialize(&buf[0], sess.header->ByteSize());
-            response->Serialize(&buf[sess.header->ByteSize()], response->ByteSize());
-            sess.transport->Send(sess.sess, &buf[0], buf.size());
+            if (!response->Serialize(&buf[sess.header->ByteSize()], response->ByteSize())) {
+                ucorf_log_warn("response serialize error. srv=%s, method=%s, msgid=%llu",
+                        sess.header->GetService().c_str(), sess.header->GetMethod().c_str(),
+                        (unsigned long long)sess.header->GetId());
+                return true;
+            }
+
+            sess.transport->Send(sess.sess, &buf[0], buf.size(), [sess](boost_ec const& ec) {
+                    if (ec)
+                        ucorf_log_warn("response send error: %s. srv=%s, method=%s, msgid=%llu",
+                            ec.message().c_str(), sess.header->GetService().c_str(),
+                            sess.header->GetMethod().c_str(), (unsigned long long)sess.header->GetId());
+                    });
         }
 
         return true;

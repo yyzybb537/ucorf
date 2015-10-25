@@ -2,6 +2,7 @@
 
 #include "preheader.h"
 #include "transport.h"
+#include "option.h"
 
 namespace ucorf
 {
@@ -19,6 +20,7 @@ namespace ucorf
         typedef boost::function<size_t(boost::shared_ptr<ITransportClient>, SessId, const char*, size_t)> OnReceiveF;
         typedef boost::function<ITransportClient*()> TransportFactory;
 
+        ServerFinder();
         virtual ~ServerFinder() {}
 
         virtual boost_ec Init(std::string const& url, TransportFactory const& factory);
@@ -26,6 +28,7 @@ namespace ucorf
         void SetConnectedCb(OnConnectedF const& cb);
         void SetReceiveCb(OnReceiveF const& cb);
         void SetDisconnectedCb(OnDisconnectedF const& cb);
+        void SetOption(boost::shared_ptr<Option> opt);
         boost_ec ReConnect();
 
     private:
@@ -39,6 +42,7 @@ namespace ucorf
 
         // single address
         boost::shared_ptr<ITransportClient> single_tp_;
+        boost::shared_ptr<Option> opt_;
     };
 
 } //namespace ucorf

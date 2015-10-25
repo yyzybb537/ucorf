@@ -11,6 +11,7 @@ using namespace Echo;
 
 static std::atomic<size_t> g_count{0};
 static std::atomic<size_t> g_error{0};
+boost_ec last_ec;
 
 void show_status()
 {
@@ -22,6 +23,8 @@ void show_status()
     last_error = g_error;
     cout << "ok: " << ok << endl;
     cout << "error: " << err << endl;
+    cout << "last_ec: " << last_ec.message() << endl;
+    last_ec = boost_ec();
 }
 
 int main(int argc, char** argv)
@@ -50,11 +53,20 @@ int main(int argc, char** argv)
         return (ITransportClient*)new NetTransportClient;
     };
 
+    ::network::OptionsUser tp_opt;
+    tp_opt.max_pack_size_ = 40960;
+    auto opt = boost::make_shared<Option>();
+    opt->transport_opt = tp_opt;
+
     std::unique_ptr<RobinDispatcher> dispatcher(new RobinDispatcher);
     std::unique_ptr<ServerFinder> finder(new ServerFinder);
     Client client;
-    client.SetTransportFactory(tp_factory).SetHeaderFactory(header_factory)
-        .SetServerFinder(std::move(finder)).SetDispatcher(std::move(dispatcher)).SetUrl("tcp://127.0.0.1:8080");
+    client.SetOption(opt)
+        .SetTransportFactory(tp_factory)
+        .SetHeaderFactory(header_factory)
+        .SetServerFinder(std::move(finder))
+        .SetDispatcher(std::move(dispatcher))
+        .SetUrl("tcp://127.0.0.1:8080");
     UcorfEchoServiceStub stub(&client);
 
     for (int i = 0; i < concurrecy; ++i)
@@ -68,7 +80,8 @@ int main(int argc, char** argv)
                 if (ec) {
                     co_yield;
                     ++g_error;
-                    cout << "rpc call error: " << ec.message() << endl;
+                    last_ec = ec;
+//                    cout << "rpc call error: " << ec.message() << endl;
                 } else {
                     ++g_count;
                 }

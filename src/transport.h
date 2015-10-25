@@ -20,6 +20,7 @@ namespace ucorf
         virtual void SetReceiveCb(OnReceiveF const&) = 0;
         virtual void SetConnectedCb(OnConnectedF const&) {}
         virtual void SetDisconnectedCb(OnDisconnectedF const&) {}
+        virtual void SetOption(boost::any const& opt) {}
     };
 
     class ITransportServer : public ITransport

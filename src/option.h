@@ -7,8 +7,9 @@ namespace ucorf
     struct Option
     {
         std::size_t request_wnd_size = -1;
-        int snd_timeout_ms = 0;
-        int rcv_timeout_ms = 0;
+        int rcv_timeout_ms = 10000;
+
+        boost::any transport_opt;
     };
 
 } //namespace ucorf
