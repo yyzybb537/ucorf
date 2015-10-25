@@ -60,26 +60,26 @@ def Gen(filename, parameter):
     c.outline('#include <ucorf/pb_service.h>')
     c.outline('#include "%s.pb.h"' % ori_filename)
     c.outline()
-    c.out('namespace ucorf {')
     if parameter.package:
-        c.out(' namespace %s' % parameter.package)
+        c.out('namespace %s' % parameter.package)
     c.outline()
     c.outline('{')
 
     c.it()
     c.outline('using namespace ::google::protobuf;')
+    c.outline('using namespace ::ucorf;')
     c.outline()
     # services
     for srv in parameter.service:
         srv_name = srv.name
         # Service
-        c.outline('class %s : public Pb_Service' % srv_name)
+        c.outline('class Ucorf%s : public Pb_Service, private %s' % (srv_name, srv_name))
         c.outline('{')
         c.outline('public:')
         c.it()
-        c.outline('%s();' % srv_name)
-        c.outline()
         c.outline('virtual std::string name();')
+        c.outline()
+        c.outline('virtual bool Call(int method_idx, Message & request, Message & response);')
         c.outline()
         c.outline('virtual const ServiceDescriptor* GetDescriptor();')
         # methods
@@ -88,17 +88,17 @@ def Gen(filename, parameter):
             input_t = method.input_type.split('.')[-1]
             output_t = method.output_type.split('.')[-1]
             c.outline()
-            c.outline('virtual bool %s(%s & request, %s * response) = 0;' % \
+            c.outline('virtual bool %s(%s & request, %s & response) = 0;' % \
                 (m_name, input_t, output_t));
         c.it_end()
         c.outline('};')
         c.outline()
         # Stub
-        c.outline('class %sStub : public Pb_ServiceStub' % srv_name)
+        c.outline('class Ucorf%sStub : public Pb_ServiceStub' % srv_name)
         c.outline('{')
         c.outline('public:')
         c.it()
-        c.outline('explicit %sStub(Client * c);' % srv_name)
+        c.outline('explicit Ucorf%sStub(Client * c);' % srv_name)
         c.outline()
         c.outline('virtual std::string name();')
         # methods
@@ -118,7 +118,6 @@ def Gen(filename, parameter):
     c.it_end()
     if parameter.package:
         c.out('}')
-    c.out('}')
     c.outline()
     f.content += c.c
 
@@ -128,45 +127,43 @@ def Gen(filename, parameter):
     c = C()
     c.outline('#include "%s.rpc.h"' % ori_filename)
     c.outline()
-    c.outline('namespace Echo {')
-    c.it()
-    c.outline('namespace {')
-    c.it()
-    for srv in parameter.service:
-        c.outline('extern const ::google::protobuf::ServiceDescriptor* %s_descriptor_;' % srv.name)
-    c.it_end()
-    c.outline('}')
-    c.it_end()
-    c.outline('}')
-    c.outline()
 
-    c.out('namespace ucorf {')
     if parameter.package:
-        c.out(' namespace %s' % parameter.package)
+        c.out('namespace %s' % parameter.package)
     c.outline()
     c.outline('{')
     c.it()
     # services
     for srv in parameter.service:
         srv_name = srv.name
-        c.outline('%s::%s()' % (srv_name, srv_name))
-        c.itf()
-        # methods
-        for method in srv.method:
-            c.outline('methods_.push_back(&%s::%s);' % (srv_name, method.name))
-        c.itf_end().outline()
 
-        c.outline('std::string %s::name()' % srv_name).itf()
+        c.outline('std::string Ucorf%s::name()' % srv_name).itf()
         c.outline('return "%s";' % srv_name).itf_end().outline()
 
-        c.outline('const ServiceDescriptor* %s::GetDescriptor()' % srv_name)
-        c.itf().outline('return ::%s::%s_descriptor_;' % (parameter.package, srv_name))
+        c.outline('bool Ucorf%s::Call(int method_idx, Message & request, Message & response)' % srv_name).itf()
+        c.outline('switch (method_idx) {').it()
+        # methods
+        i = 0
+        for method in srv.method:
+            m_name = method.name
+            input_t = method.input_type.split('.')[-1]
+            output_t = method.output_type.split('.')[-1]
+            c.outline('case %s:' % i).it()
+            c.outline('return %s((%s &)request, (%s &)response);' % (m_name, input_t, output_t)).it_end()
+            i += 1
+        c.outline('default:').it()
+        c.outline('return false;').it_end()
+        c.it_end().outline('}')
         c.itf_end().outline()
 
-        c.outline('%sStub::%sStub(Client * c)' % (srv_name, srv_name))
+        c.outline('const ServiceDescriptor* Ucorf%s::GetDescriptor()' % srv_name)
+        c.itf().outline('return %s::GetDescriptor();' % srv_name)
+        c.itf_end().outline()
+
+        c.outline('Ucorf%sStub::Ucorf%sStub(Client * c)' % (srv_name, srv_name))
         c.it().outline(': Pb_ServiceStub(c) {}').it_end().outline()
 
-        c.outline('std::string %sStub::name()' % srv_name)
+        c.outline('std::string Ucorf%sStub::name()' % srv_name)
         c.itf().outline('return "%s";' % srv_name).itf_end().outline()
 
         # methods
@@ -174,7 +171,7 @@ def Gen(filename, parameter):
             m_name = method.name
             input_t = method.input_type.split('.')[-1]
             output_t = method.output_type.split('.')[-1]
-            c.outline('std::shared_ptr<%s> %sStub::%s(%s & request, boost_ec * ec)' %\
+            c.outline('std::shared_ptr<%s> Ucorf%sStub::%s(%s & request, boost_ec * ec)' %\
                     (output_t, srv_name, m_name, input_t))
             c.itf()
             c.outline('std::shared_ptr<%s> response = std::make_shared<%s>();' % (output_t, output_t))
@@ -184,13 +181,12 @@ def Gen(filename, parameter):
             c.outline().outline('return response;')
             c.itf_end().outline()
 
-            c.outline('boost_ec %s(%s & request, %s * response)' %\
-                    (m_name, input_t, output_t))
+            c.outline('boost_ec Ucorf%sStub::%s(%s & request, %s * response)' %\
+                    (srv_name, m_name, input_t, output_t))
             c.itf().outline('return CallMethod("%s", request, response);' % m_name).itf_end().outline()
     c.it_end()
     if parameter.package:
         c.out('}')
-    c.out('}')
     c.outline()
     f.content += c.c
 

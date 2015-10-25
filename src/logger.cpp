@@ -105,6 +105,7 @@ namespace ucorf
             char *b = new char[len + 1];
             vsnprintf(b, len + 1, fmt, args);
             info << b;
+            delete b;
         } else {
             info << buf;
         }

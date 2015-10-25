@@ -57,6 +57,7 @@ int main(int argc, char** argv)
     tp_opt.max_pack_size_ = 40960;
     auto opt = boost::make_shared<Option>();
     opt->transport_opt = tp_opt;
+    opt->rcv_timeout_ms = 0;
 
     std::unique_ptr<RobinDispatcher> dispatcher(new RobinDispatcher);
     std::unique_ptr<ServerFinder> finder(new ServerFinder);
@@ -66,7 +67,7 @@ int main(int argc, char** argv)
         .SetHeaderFactory(header_factory)
         .SetServerFinder(std::move(finder))
         .SetDispatcher(std::move(dispatcher))
-        .SetUrl("tcp://127.0.0.1:8080");
+        .SetUrl("tcp://192.168.1.106:8080");
     UcorfEchoServiceStub stub(&client);
 
     for (int i = 0; i < concurrecy; ++i)
@@ -96,5 +97,6 @@ int main(int argc, char** argv)
     };
 
     co_sched.RunLoop();
+
     return 0;
 }

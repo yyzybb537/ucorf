@@ -35,17 +35,34 @@ int main(int argc, char **argv)
         .SetUrl(url);
     UcorfEchoServiceStub stub(&client);
 
+//    go [&]{
+//retry:
+//        EchoRequest request;
+//        request.set_code(1);
+//        EchoResponse response;
+//
+//        boost_ec ec = stub.Echo(request, &response);
+//        if (ec) {
+//            cout << "rpc call error: " << ec.message() << endl;
+//        } else {
+//            cout << "rpc call success, response.code=" << response.code() << endl;
+//        }
+//
+//        co_sleep(1000);
+//        goto retry;
+//    };
+
     go [&]{
 retry:
         EchoRequest request;
         request.set_code(1);
-        EchoResponse response;
 
-        boost_ec ec = stub.Echo(request, &response);
+        boost_ec ec;
+        std::shared_ptr<EchoResponse> rsp = stub.Echo(request, &ec);
         if (ec) {
             cout << "rpc call error: " << ec.message() << endl;
         } else {
-            cout << "rpc call success, response.code=" << response.code() << endl;
+            cout << "rpc call success, response.code=" << rsp->code() << endl;
         }
 
         co_sleep(1000);

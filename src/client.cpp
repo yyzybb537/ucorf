@@ -90,8 +90,8 @@ namespace ucorf
         if (!response) {
             tp->Send(&buf[0], buf.size());
         } else {
-            auto it = channels_[tp.get()].insert(std::make_pair(msg_id, RspChan(1))).first;
-            auto chan = it->second;
+            auto chan = RspChan(1);
+            channels_[tp.get()].insert(std::make_pair(msg_id, chan)).first;
             tp->Send(&buf[0], buf.size(), [=](boost_ec const& ec){
                         if (ec) {
                             chan.TryPush(ec);
@@ -104,7 +104,14 @@ namespace ucorf
                     });
             ResponseData rsp;
             chan >> rsp;
-            channels_[tp.get()].erase(msg_id);
+
+            auto it1 = channels_.find(tp.get());
+            if (it1 != channels_.end()) {
+                auto it2 = it1->second.find(msg_id);
+                if (it2 != it1->second.end())
+                    it1->second.erase(it2);
+            }
+
             if (rsp.ec)
                 return rsp.ec;
 
@@ -135,6 +142,19 @@ namespace ucorf
         channels_.erase(tp.get());
     }
 
+//    static std::string to_14_hex(const char* data, size_t len)
+//    {
+//        static const char hex[] = "0123456789abcdef";
+//        len = std::min<size_t>(len, 28);
+//        std::string str;
+//        for (size_t i = 0; i < len; ++i) {
+//            str += hex[(unsigned char)data[i] >> 4];
+//            str += hex[(unsigned char)data[i] & 0xf];
+//            str += ' ';
+//        }
+//        return str;
+//    }
+
     size_t Client::OnReceiveData(boost::shared_ptr<ITransportClient> tp, SessId sess_id, const char* data, size_t bytes)
     {
         size_t consume = 0;
@@ -145,10 +165,16 @@ namespace ucorf
         {
             IHeaderPtr header = head_factory_();
             size_t head_len = header->Parse(buf, len);
-            if (!head_len) break;
+            if (!head_len) {
+//                ucorf_log_verb("header parse error, len = %u, bin: %s", (unsigned)len, to_14_hex(buf, len).c_str());
+                break;
+            }
 
             size_t follow_bytes = header->GetFollowBytes();
-            if (head_len + follow_bytes > len) break;
+            if (head_len + follow_bytes > len) {
+//                ucorf_log_verb("follow bytes too less, head_len = %u, follow_bytes = %u, len = %u", (unsigned)head_len, (unsigned)follow_bytes, (unsigned)len);
+                break;
+            }
 
             OnResponse(tp, header, buf + head_len, follow_bytes);
 
@@ -157,11 +183,15 @@ namespace ucorf
             len = bytes - consume;
         }
 
+//        ucorf_log_debug("consume %u bytes from %u bytes", (unsigned)consume, (unsigned)bytes);
         return consume;
     }
 
     void Client::OnResponse(boost::shared_ptr<ITransportClient> tp, IHeaderPtr header, const char* data, size_t bytes)
     {
+//        ucorf_log_debug("receive response. srv=%s, method=%s, msgid=%llu",
+//                header->GetService().c_str(), header->GetMethod().c_str(), (unsigned long long)header->GetId());
+
         std::size_t msg_id = header->GetId();
         auto it_1 = channels_.find(tp.get());
         if (channels_.end() == it_1) {

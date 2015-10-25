@@ -36,7 +36,7 @@ int main()
     };
 
     std::unique_ptr<NetTransportServer> tp(new NetTransportServer);
-    boost_ec ec = tp->Listen("tcp://127.0.0.1:8080");
+    boost_ec ec = tp->Listen("tcp://192.168.1.106:8080");
     if (ec) {
         cout << "listen error: " << ec.message() << endl;
         return 1;
@@ -44,9 +44,16 @@ int main()
         cout << "start success" << endl;
     }
 
+    ::network::OptionsUser tp_opt;
+    tp_opt.max_pack_size_ = 40960;
+    auto opt = boost::make_shared<Option>();
+    opt->transport_opt = tp_opt;
+
     std::shared_ptr<IService> echo_srv(new MyEcho);
     Server server;
-    server.BindTransport(std::move(tp)).SetHeaderFactory(header_factory)
+    server.SetOption(opt)
+        .BindTransport(std::move(tp))
+        .SetHeaderFactory(header_factory)
         .RegisterService(echo_srv);
 
     go []{
