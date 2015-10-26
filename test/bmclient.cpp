@@ -53,6 +53,10 @@ int main(int argc, char** argv)
         concurrecy = atoi(argv[1]);
     }
 
+    std::string url = "tcp://127.0.0.1:8080";
+    if (argc > 2)
+        url = argv[2];
+
     FILE * lg = fopen("log", "a+");
     if (!lg) {
         cout << "open log error:" << strerror(errno) << endl;
@@ -84,7 +88,7 @@ int main(int argc, char** argv)
         .SetHeaderFactory(header_factory)
         .SetServerFinder(std::move(finder))
         .SetDispatcher(std::move(dispatcher))
-        .SetUrl("tcp://127.0.0.1:8080");
+        .SetUrl(url);
     UcorfEchoServiceStub stub(&client);
 
     for (int i = 0; i < concurrecy; ++i)
