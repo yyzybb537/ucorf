@@ -161,6 +161,7 @@ namespace ucorf
         const char* buf = data;
         size_t len = bytes;
 
+        int yield_c = 0;
         while (consume < bytes)
         {
             IHeaderPtr header = head_factory_();
@@ -181,6 +182,9 @@ namespace ucorf
             consume += head_len + follow_bytes;
             buf = data + consume;
             len = bytes - consume;
+
+            if ((++yield_c & 0xff) == 0)
+                co_yield;
         }
 
 //        ucorf_log_debug("consume %u bytes from %u bytes", (unsigned)consume, (unsigned)bytes);

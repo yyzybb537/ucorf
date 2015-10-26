@@ -67,7 +67,7 @@ int main(int argc, char** argv)
         .SetHeaderFactory(header_factory)
         .SetServerFinder(std::move(finder))
         .SetDispatcher(std::move(dispatcher))
-        .SetUrl("tcp://192.168.1.106:8080");
+        .SetUrl("tcp://127.0.0.1:8080");
     UcorfEchoServiceStub stub(&client);
 
     for (int i = 0; i < concurrecy; ++i)

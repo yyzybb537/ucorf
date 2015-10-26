@@ -36,7 +36,7 @@ int main()
     };
 
     std::unique_ptr<NetTransportServer> tp(new NetTransportServer);
-    boost_ec ec = tp->Listen("tcp://192.168.1.106:8080");
+    boost_ec ec = tp->Listen("tcp://127.0.0.1:8080");
     if (ec) {
         cout << "listen error: " << ec.message() << endl;
         return 1;

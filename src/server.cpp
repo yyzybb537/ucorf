@@ -92,6 +92,7 @@ namespace ucorf
             len = bytes - consume;
         }
 
+        co_yield;
         return consume;
     }
 
