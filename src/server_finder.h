@@ -23,7 +23,7 @@ namespace ucorf
         ServerFinder();
         virtual ~ServerFinder() {}
 
-        virtual boost_ec Init(std::string const& url, TransportFactory const& factory);
+        virtual void Init(std::string const& url, TransportFactory const& factory);
 
         void SetConnectedCb(OnConnectedF const& cb);
         void SetReceiveCb(OnReceiveF const& cb);

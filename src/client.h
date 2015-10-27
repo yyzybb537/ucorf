@@ -56,7 +56,6 @@ namespace ucorf
         typedef co_chan<ResponseData> RspChan;
         typedef std::unordered_map<ITransportClient*, std::unordered_map<std::size_t, RspChan>> ChannelMap;
         StubMap stubs_;
-        co_mutex connect_mutex_;
         std::string url_;
         ChannelMap channels_;
         HeaderFactory head_factory_;

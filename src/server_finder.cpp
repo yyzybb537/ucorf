@@ -9,7 +9,7 @@ namespace ucorf
         : opt_(new Option)
     {}
 
-    boost_ec ServerFinder::Init(std::string const& url, TransportFactory const& factory)
+    void ServerFinder::Init(std::string const& url, TransportFactory const& factory)
     {
         tp_factory_ = factory;
         url_ = url;
@@ -17,7 +17,7 @@ namespace ucorf
         if (boost::istarts_with(url_, "zk://")) {
             // TODO: support zookeeper.
             mode_ = eMode::zk;
-            return MakeUcorfErrorCode(eUcorfErrorCode::ec_unsupport_protocol);
+            return ;
         }
 
         // single connection.
@@ -29,7 +29,6 @@ namespace ucorf
         single_tp_->SetConnectedCb([=](SessId id){ on_connect_(weak.lock(), id); });
         single_tp_->SetReceiveCb([=](SessId id, const char* data, size_t len){ return on_receive_(weak.lock(), id, data, len); });
         single_tp_->SetDisconnectedCb([=](SessId id, boost_ec const& ec){ on_disconnect_(weak.lock(), id, ec); });
-        return single_tp_->Connect(url_);
     }
 
     void ServerFinder::SetConnectedCb(OnConnectedF const& cb)
