@@ -182,15 +182,18 @@ retry:
                 for (auto &kv : zk_watchers_)
                     __Watch(kv.first);
             } else {
-                // TODO: It's disconnected ???
-                zk_ = nullptr;
+                if (zk_) {
+                    zookeeper_close(zk_);
+                    zk_ = nullptr;
+                }
+
                 go [this]{ this->Connect(); };
                 return ;
             }
         } else if (type == ZOO_CHILD_EVENT) {
             __Watch(path);
         } else {
-            // TODO
+            // ignore other event.
         }
     }
 
