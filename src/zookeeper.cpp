@@ -7,13 +7,39 @@ namespace ucorf
         int state, const char *path, void *watcherCtx)
     {
         ZookeeperClient *self = (ZookeeperClient*)watcherCtx;
-        self->OnWatch(zh, type, state, path);
+        std::string spath = path;
+        OnWatchF fn = [=]{
+            self->OnWatch(zh, type, state, spath);
+        };
+        self->event_chan_ << fn;
     }
+
+    ZookeeperClient::ZookeeperClient()
+        : event_chan_(128)
+    {}
 
     void ZookeeperClient::Init(std::string zk_host)
     {
         host_ = zk_host;
+        go [this] {
+            for (;;) {
+                OnWatchF fn;
+                event_chan_ >> fn;
+                fn();
+            }
+        };
         go [this]{ this->Connect(); };
+    }
+
+    bool ZookeeperClient::WaitForConnected(unsigned timeout_ms)
+    {
+        auto begin = std::chrono::system_clock::now();
+        while (!timeout_ms || std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - begin).count() < timeout_ms) {
+            if (zk_) return true;
+            co_sleep(1);
+        }
+
+        return false;
     }
 
     bool ZookeeperClient::Watch(std::string path, WatchCb const& cb, void* key)
@@ -102,19 +128,20 @@ retry:
             return false;
         }
 
-        ACL_vector acl = {};
         char buf[1] = {};
         if (recursive) {
-            std::string::size_type pos = 1;
+            std::string::size_type pos = 0;
             do {
-                pos = path.find("/", pos);
+                pos = path.find("/", pos + 1);
                 if (pos == std::string::npos) break;
                 std::string parent = path.substr(0, pos);
-                int ret = zoo_create(zk_, parent.c_str(), nullptr, -1, &acl, 0, buf, 0);
+                int ret = zoo_create(zk_, parent.c_str(), nullptr, -1, &ZOO_OPEN_ACL_UNSAFE, 0, buf, 0);
                 if (ret != ZOK && ret != ZNODEEXISTS) {
                     ucorf_log_error("create zookeeper node(%s) returns %d error: %s",
                             parent.c_str(), ret, zerror(errno));
                     return false;
+                } else {
+                    ucorf_log_debug("create node(%s) to zookeeper(%s) success.", parent.c_str(), host_.c_str());
                 }
             } while (pos != std::string::npos);
         }
@@ -125,14 +152,26 @@ retry:
         else if (flags == eCreateNodeFlags::sequence)
             cflag = ZOO_SEQUENCE;
 
-        int ret = zoo_create(zk_, path.c_str(), nullptr, -1, &acl, cflag, buf, 0);
+        int ret = zoo_create(zk_, path.c_str(), nullptr, -1, &ZOO_OPEN_ACL_UNSAFE, cflag, buf, 0);
         if (ret != ZOK && ret != ZNODEEXISTS) {
             ucorf_log_error("create zookeeper node(%s) returns %d error: %s",
                     path.c_str(), ret, zerror(errno));
             return false;
         }
 
+        if (flags == eCreateNodeFlags::ephemeral)
+            ephemeral_nodes_.insert(path);
+
         return true;
+    }
+
+    bool ZookeeperClient::DelayCreateEphemeralNode(std::string path)
+    {
+        std::unique_lock<co_mutex> lock(mutex_);
+        ephemeral_nodes_.insert(path);
+
+        if (!zk_) return true;
+        return CreateNode(path, eCreateNodeFlags::ephemeral, true, false);
     }
 
     bool ZookeeperClient::DeleteNode(std::string path)
@@ -151,6 +190,7 @@ retry:
             return false;
         }
 
+        ephemeral_nodes_.erase(path);
         return true;
     }
 
@@ -170,17 +210,23 @@ retry:
         }
     }
 
-    void ZookeeperClient::OnWatch(zhandle_t *zh, int type, int state, const char *path)
+    void ZookeeperClient::OnWatch(zhandle_t *zh, int type, int state, std::string path)
     {
         std::unique_lock<co_mutex> lock(mutex_);
         ucorf_log_notice("zookeeper trigger type=%d state=%d path=%s ",
-                type, state, path ? path : "(nil)");
+                type, state, path.c_str());
 
         if (type == ZOO_SESSION_EVENT) {
             if (state == ZOO_CONNECTED_STATE) {
+                ucorf_log_notice("connect to zookeeper(%s) success!", host_.c_str());
                 zk_ = zh;
                 for (auto &kv : zk_watchers_)
                     __Watch(kv.first);
+                for (auto &node : ephemeral_nodes_)
+                    if (!CreateNode(node, eCreateNodeFlags::ephemeral, true, false)) {
+                        ucorf_log_error("create ephemeral node(%s) to zookeeper(%s) error.",
+                                node.c_str(), host_.c_str());
+                    }
             } else {
                 if (zk_) {
                     zookeeper_close(zk_);

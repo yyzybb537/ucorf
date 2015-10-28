@@ -17,9 +17,11 @@ namespace ucorf
 
         virtual boost_ec Listen(std::string const& url);
         virtual void Send(SessId id, const void* data, size_t bytes, OnSndF const& cb = NULL);
+        virtual std::string LocalUrl() const;
 
     private:
         ::network::Server s_;
+        std::string url_;
     };
 
     class NetTransportClient : public ITransportClient

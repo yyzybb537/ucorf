@@ -4,6 +4,7 @@
 #include "transport.h"
 #include "message.h"
 #include "option.h"
+#include "server_register.h"
 
 namespace ucorf
 {
@@ -22,13 +23,17 @@ namespace ucorf
 
         Server();
 
+        ~Server();
+
         Server& SetOption(boost::shared_ptr<Option> opt);
 
         Server& BindTransport(std::unique_ptr<ITransportServer> && transport);
 
         Server& SetHeaderFactory(HeaderFactory const& head_factory);
 
-        Server& RegisterTo(std::string const& url);
+        Server& SetRegister(boost::shared_ptr<IServerRegister> reg);
+
+        bool RegisterTo(std::string const& url);
 
         bool RegisterService(std::shared_ptr<IService> service);
 
@@ -49,6 +54,7 @@ namespace ucorf
         TransportList transports_;
         HeaderFactory head_factory_;
         boost::shared_ptr<Option> opt_;
+        boost::shared_ptr<IServerRegister> register_;
     };
 
 } //namespace ucorf

@@ -28,6 +28,7 @@ namespace ucorf
     public:
         virtual boost_ec Listen(std::string const& url) = 0;
         virtual void Send(SessId id, const void* data, size_t bytes, OnSndF const& cb = NULL) = 0;
+        virtual std::string LocalUrl() const = 0;
     };
 
     class ITransportClient : public ITransport

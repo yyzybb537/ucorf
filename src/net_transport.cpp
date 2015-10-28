@@ -42,12 +42,17 @@ namespace ucorf
 
     boost_ec NetTransportServer::Listen(std::string const& url)
     {
+        url_ = url;
         return s_.goStart(url);
     }
     void NetTransportServer::Send(SessId id, const void* data, size_t bytes, OnSndF const& cb)
     {
         ::network::SessionId &sess = ::boost::any_cast<::network::SessionId&>(id);
         s_.GetProtocol()->Send(sess, data, bytes, cb);
+    }
+    std::string NetTransportServer::LocalUrl() const
+    {
+        return url_;
     }
 
     // client

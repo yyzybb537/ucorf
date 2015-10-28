@@ -21,8 +21,13 @@ namespace ucorf
         typedef boost::function<void(Children const&)> WatchCb;
         typedef std::map<void*, WatchCb> WatcherMap;
         typedef std::map<std::string, WatcherMap> ZkWatchers;
+        typedef boost::function<void()> OnWatchF;
+
+        ZookeeperClient();
 
         void Init(std::string zk_host);
+
+        bool WaitForConnected(unsigned timeout_ms);
 
         bool Watch(std::string path, WatchCb const& cb, void* key);
 
@@ -31,11 +36,13 @@ namespace ucorf
         bool CreateNode(std::string path, eCreateNodeFlags flags,
                 bool recursive = true, bool is_lock = true);
 
+        bool DelayCreateEphemeralNode(std::string path);
+
         bool DeleteNode(std::string path);
 
     private:
         void Connect();
-        void OnWatch(zhandle_t *zh, int type, int state, const char *path);
+        void OnWatch(zhandle_t *zh, int type, int state, std::string path);
         bool __Watch(std::string path, WatchCb const& cb = NULL);
         static void __watcher_fn(zhandle_t *zh, int type, 
                 int state, const char *path, void *watcherCtx);
@@ -44,6 +51,8 @@ namespace ucorf
         zhandle_t *zk_ = nullptr;
         std::string host_;
         ZkWatchers zk_watchers_;
+        std::set<std::string> ephemeral_nodes_;
+        co_chan<OnWatchF> event_chan_;
         co_mutex mutex_;
     };
 
@@ -59,7 +68,7 @@ namespace ucorf
 
     private:
         std::map<std::string, boost::shared_ptr<ZookeeperClient> > zk_clients_;
-        int zk_timeout_;
+        int zk_timeout_ = 10000;
         co_mutex mutex_;
     };
 

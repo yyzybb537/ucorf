@@ -2,12 +2,19 @@
 #include "message.h"
 #include "service.h"
 #include "logger.h"
+#include "zookeeper.h"
+#include <boost/algorithm/string.hpp>
 
 namespace ucorf
 {
     Server::Server()
-        : opt_(new Option)
+        : opt_(new Option), register_(new ZookeeperRegister)
     {
+    }
+
+    Server::~Server()
+    {
+        register_->Unregister();
     }
 
     Server& Server::BindTransport(std::unique_ptr<ITransportServer> && transport)
@@ -39,10 +46,22 @@ namespace ucorf
         return *this;
     }
 
-    Server& Server::RegisterTo(std::string const& url)
+    Server& Server::SetRegister(boost::shared_ptr<IServerRegister> reg)
     {
-        // TODO: zookeeper
+        register_->Unregister();
+        register_ = reg;
         return *this;
+    }
+
+    bool Server::RegisterTo(std::string const& url)
+    {
+        for (auto &tp : transports_) {
+            std::string addr = tp->LocalUrl();
+            if (!register_->Register(url, addr))
+                return false;
+        }
+
+        return true;
     }
 
     bool Server::RegisterService(std::shared_ptr<IService> service)
