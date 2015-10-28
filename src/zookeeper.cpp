@@ -157,6 +157,8 @@ retry:
             ucorf_log_error("create zookeeper node(%s) returns %d error: %s",
                     path.c_str(), ret, zerror(errno));
             return false;
+        } else {
+            ucorf_log_debug("create node(%s) to zookeeper(%s) success.", path.c_str(), host_.c_str());
         }
 
         if (flags == eCreateNodeFlags::ephemeral)
@@ -165,13 +167,50 @@ retry:
         return true;
     }
 
-    bool ZookeeperClient::DelayCreateEphemeralNode(std::string path)
+    bool ZookeeperClient::DelayCreateEphemeralNode(std::string path, bool is_lock)
     {
-        std::unique_lock<co_mutex> lock(mutex_);
+        std::unique_lock<co_mutex> lock(mutex_, std::defer_lock);
+        if (is_lock) lock.lock();
+
         ephemeral_nodes_.insert(path);
 
         if (!zk_) return true;
-        return CreateNode(path, eCreateNodeFlags::ephemeral, true, false);
+
+        char buf[1] = {};
+        std::string::size_type pos = 0;
+        do {
+            pos = path.find("/", pos + 1);
+            if (pos == std::string::npos) break;
+            std::string parent = path.substr(0, pos);
+            int ret = zoo_create(zk_, parent.c_str(), nullptr, -1, &ZOO_OPEN_ACL_UNSAFE, 0, buf, 0);
+            if (ret != ZOK && ret != ZNODEEXISTS) {
+                ucorf_log_error("create zookeeper node(%s) returns %d error: %s",
+                        parent.c_str(), ret, zerror(errno));
+                return false;
+            } else {
+                ucorf_log_debug("create node(%s) to zookeeper(%s) success.", parent.c_str(), host_.c_str());
+            }
+        } while (pos != std::string::npos);
+
+        int ret = zoo_create(zk_, path.c_str(), nullptr, -1, &ZOO_OPEN_ACL_UNSAFE, ZOO_EPHEMERAL, buf, 0);
+        if (ret == ZOK) {
+            ucorf_log_debug("create node(%s) to zookeeper(%s) success.", path.c_str(), host_.c_str());
+        } else if (ret == ZNODEEXISTS) {
+            // retry ...
+            ucorf_log_debug("create node(%s) to zookeeper(%s) error because exists, will retry ...", path.c_str(), host_.c_str());
+            go [=] {
+                co_sleep(3000);
+                std::unique_lock<co_mutex> lock(mutex_);
+                if (this->ephemeral_nodes_.count(path))
+                    this->DelayCreateEphemeralNode(path, false);
+            };
+        } else {
+            ucorf_log_error("create zookeeper node(%s) returns %d error: %s",
+                    path.c_str(), ret, zerror(errno));
+            return false;
+        }
+
+        return true;
     }
 
     bool ZookeeperClient::DeleteNode(std::string path)
@@ -223,7 +262,7 @@ retry:
                 for (auto &kv : zk_watchers_)
                     __Watch(kv.first);
                 for (auto &node : ephemeral_nodes_)
-                    if (!CreateNode(node, eCreateNodeFlags::ephemeral, true, false)) {
+                    if (!DelayCreateEphemeralNode(node, false)) {
                         ucorf_log_error("create ephemeral node(%s) to zookeeper(%s) error.",
                                 node.c_str(), host_.c_str());
                     }

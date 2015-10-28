@@ -36,7 +36,7 @@ namespace ucorf
         bool CreateNode(std::string path, eCreateNodeFlags flags,
                 bool recursive = true, bool is_lock = true);
 
-        bool DelayCreateEphemeralNode(std::string path);
+        bool DelayCreateEphemeralNode(std::string path, bool is_lock = true);
 
         bool DeleteNode(std::string path);
 
