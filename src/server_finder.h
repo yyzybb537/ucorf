@@ -3,6 +3,7 @@
 #include "preheader.h"
 #include "transport.h"
 #include "option.h"
+#include "zookeeper.h"
 
 namespace ucorf
 {
@@ -21,7 +22,7 @@ namespace ucorf
         typedef boost::function<ITransportClient*()> TransportFactory;
 
         ServerFinder();
-        virtual ~ServerFinder() {}
+        virtual ~ServerFinder();
 
         virtual void Init(std::string const& url, TransportFactory const& factory);
 
@@ -32,6 +33,10 @@ namespace ucorf
         boost_ec ReConnect();
 
     private:
+        void OnZookeeperChilds(ZookeeperClient::Children const& nodes,
+                boost::shared_ptr<bool> token);
+
+    private:
         OnConnectedF on_connect_;
         OnReceiveF on_receive_;
         OnDisconnectedF on_disconnect_;
@@ -39,10 +44,16 @@ namespace ucorf
         bool inited_;
         std::string url_;
         eMode mode_;
+        boost::shared_ptr<Option> opt_;
 
         // single address
         boost::shared_ptr<ITransportClient> single_tp_;
-        boost::shared_ptr<Option> opt_;
+
+        // zookeeper address and path
+        co_mutex destroy_mutex_;
+        boost::shared_ptr<bool> token_;
+        std::string zk_addr_;
+        std::string zk_path_;
     };
 
 } //namespace ucorf

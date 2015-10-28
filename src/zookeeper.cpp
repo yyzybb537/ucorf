@@ -1,5 +1,7 @@
 #include "zookeeper.h"
 #include "logger.h"
+#include <boost/algorithm/string.hpp>
+#include <boost/regex.hpp>
 
 namespace ucorf
 {
@@ -310,6 +312,50 @@ retry:
         }
 
         return it->second;
+    }
+
+    std::pair<std::string, std::string> ZookeeperClientMgr::ParseZookeeperUrl(std::string url)
+    {
+        std::pair<std::string, std::string> result;
+        const char* zk_prefix = "zk://";
+        if (!boost::istarts_with(url, zk_prefix)) {
+            ucorf_log_error("zookeeper url must be starts with \"zk://\"");
+            return result;
+        }
+
+        size_t addr_begin = strlen(zk_prefix);
+        size_t path_begin = url.find('/', addr_begin);
+        if (std::string::npos == path_begin) {
+            ucorf_log_error("zookeeper url must be have path, starts with '/'");
+            return result;
+        }
+
+        result.first = url.substr(addr_begin, path_begin - addr_begin);
+        result.second = url.substr(path_begin, -1);
+        return result;
+    }
+    std::string ZookeeperClientMgr::Url2ZookeeperNode(std::string url)
+    {
+        static ::boost::regex re("((.*)://)?([^/]+)");
+        boost::smatch result;
+        bool ok = boost::regex_match(url, result, re);
+        if (!ok) {
+            return "";
+        }
+
+        std::string proto = result[2].str();
+        if (proto.empty()) proto = "TCP";
+        std::string addr = result[3];
+        return addr + ":" + proto;
+    }
+    std::string ZookeeperClientMgr::ZookeeperNode2Url(std::string node)
+    {
+        size_t pos = node.find_last_of(':');
+        if (pos == std::string::npos) return "";
+
+        std::string proto = node.substr(pos + 1, -1);
+        std::string addr = node.substr(0, pos);
+        return proto + "://" + addr;
     }
 
 } //namespace ucorf

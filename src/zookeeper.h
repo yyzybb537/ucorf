@@ -64,6 +64,10 @@ namespace ucorf
         void SetTimeout(int timeo);
         int GetTimeout();
 
+        std::pair<std::string, std::string> ParseZookeeperUrl(std::string url);
+        std::string Url2ZookeeperNode(std::string url);
+        std::string ZookeeperNode2Url(std::string node);
+
         boost::shared_ptr<ZookeeperClient> GetZookeeperClient(std::string zk_host);
 
     private:

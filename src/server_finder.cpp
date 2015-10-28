@@ -2,12 +2,21 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/weak_ptr.hpp>
 #include "error.h"
+#include "logger.h"
 
 namespace ucorf
 {
     ServerFinder::ServerFinder()
-        : opt_(new Option)
+        : opt_(new Option), token_(new bool(true))
     {}
+
+    ServerFinder::~ServerFinder()
+    {
+        std::unique_lock<co_mutex> lock(destroy_mutex_);
+        *token_ = false;
+        auto zk = ZookeeperClientMgr::getInstance().GetZookeeperClient(zk_addr_);
+        zk->Unwatch(zk_path_, this);
+    }
 
     void ServerFinder::Init(std::string const& url, TransportFactory const& factory)
     {
@@ -15,7 +24,14 @@ namespace ucorf
         url_ = url;
 
         if (boost::istarts_with(url_, "zk://")) {
-            // TODO: support zookeeper.
+            auto addr_path = ZookeeperClientMgr::getInstance().ParseZookeeperUrl(url_);
+            if (addr_path.first.empty()) {
+                ucorf_log_error("zookeeper(%s) url parse error!", url_.c_str());
+                return ;
+            }
+
+            auto zk = ZookeeperClientMgr::getInstance().GetZookeeperClient(addr_path.first);
+            zk->Watch(addr_path.second, boost::bind(&ServerFinder::OnZookeeperChilds, this, _1, token_), this);
             mode_ = eMode::zk;
             return ;
         }
@@ -54,8 +70,7 @@ namespace ucorf
     boost_ec ServerFinder::ReConnect()
     {
         if (mode_ == eMode::zk) {
-            // TODO: support zookeeper.
-            return MakeUcorfErrorCode(eUcorfErrorCode::ec_unsupport_protocol);
+            return MakeUcorfErrorCode(eUcorfErrorCode::ec_no_estab);
         } else if (mode_ == eMode::single) {
             if (!single_tp_->IsEstab())
                 return single_tp_->Connect(url_);
@@ -64,6 +79,16 @@ namespace ucorf
         }
 
         return MakeUcorfErrorCode(eUcorfErrorCode::ec_unsupport_protocol);
+    }
+
+    void ServerFinder::OnZookeeperChilds(ZookeeperClient::Children const& nodes,
+            boost::shared_ptr<bool> token)
+    {
+        std::unique_lock<co_mutex> lock(destroy_mutex_, std::defer_lock);
+        if (!lock.try_lock()) return ;
+        if (!*token) return ;
+
+        // TODO
     }
 
 } //namespace ucorf

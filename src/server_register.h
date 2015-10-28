@@ -21,8 +21,6 @@ namespace ucorf
 
         virtual void Unregister();
 
-        std::string Url2ZookeeperNode(std::string url);
-
     private:
         std::multimap<std::string, std::string> destinations_;
     };
