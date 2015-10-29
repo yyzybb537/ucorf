@@ -52,9 +52,20 @@ namespace ucorf
             ResponseData(boost_ec const& e) : ec(e) {}
         };
 
+        // 必须为2的幂
+        enum { e_chan_group_count = 0x80 };
+
         typedef std::map<std::string, ITransportClient*> StubMap;
         typedef co_chan<ResponseData> RspChan;
-        typedef std::unordered_map<ITransportClient*, std::unordered_map<std::size_t, RspChan>> ChannelMap;
+        typedef std::unordered_map<std::size_t, RspChan> RspChanMap;
+        struct RspChanGroup
+        {
+            co_mutex mtxs[e_chan_group_count];
+            RspChanMap maps[e_chan_group_count];
+            volatile bool closed[e_chan_group_count] = {};
+        };
+        typedef std::unordered_map<ITransportClient*,
+                    boost::shared_ptr<RspChanGroup>> ChannelMap;
         StubMap stubs_;
         std::string url_;
         co_mutex channel_mtx_;

@@ -90,11 +90,25 @@ namespace ucorf
         if (!response) {
             tp->Send(&buf[0], buf.size());
         } else {
+            std::unique_lock<co_mutex> channel_lock(channel_mtx_);
+            auto it_1 = channels_.find(tp.get());
+            if (channels_.end() == it_1)
+                return MakeUcorfErrorCode(eUcorfErrorCode::ec_no_estab);
+            auto chan_grp = it_1->second;
+            channel_lock.unlock();
+
             auto chan = RspChan(1);
-            {
-                std::unique_lock<co_mutex> lock(channel_mtx_);
-                channels_[tp.get()].insert(std::make_pair(msg_id, chan)).first;
-            }
+            int map_idx = msg_id & (e_chan_group_count - 1);
+
+            RspChanMap &chan_map = chan_grp->maps[map_idx];
+            co_mutex &mtx = chan_grp->mtxs[map_idx];
+
+            std::unique_lock<co_mutex> map_lock(mtx);
+            if (chan_grp->closed[map_idx])
+                return MakeUcorfErrorCode(eUcorfErrorCode::ec_no_estab);
+            chan_map[msg_id] = chan;
+            map_lock.unlock();
+
             tp->Send(&buf[0], buf.size(), [=](boost_ec const& ec){
                         if (ec) {
                             chan.TryPush(ec);
@@ -109,13 +123,8 @@ namespace ucorf
             chan >> rsp;
 
             {
-                std::unique_lock<co_mutex> lock(channel_mtx_);
-                auto it1 = channels_.find(tp.get());
-                if (it1 != channels_.end()) {
-                    auto it2 = it1->second.find(msg_id);
-                    if (it2 != it1->second.end())
-                        it1->second.erase(it2);
-                }
+                std::unique_lock<co_mutex> map_lock(mtx);
+                chan_map.erase(msg_id);
             }
 
             if (rsp.ec)
@@ -131,22 +140,29 @@ namespace ucorf
     void Client::OnConnected(boost::shared_ptr<ITransportClient> tp, SessId sess_id)
     {
         dispatcher_->Add(tp);
+
+        std::unique_lock<co_mutex> channel_lock(channel_mtx_);
+        channels_[tp.get()].reset(new RspChanGroup);
     }
     void Client::OnDisconnected(boost::shared_ptr<ITransportClient> tp, SessId sess_id, boost_ec const& ec)
     {
         dispatcher_->Del(tp);
 
-        std::unique_lock<co_mutex> lock(channel_mtx_);
+        std::unique_lock<co_mutex> channel_lock(channel_mtx_);
         auto it_1 = channels_.find(tp.get());
         if (channels_.end() == it_1) return ;
+        auto chan_grp = it_1->second;
+        channels_.erase(it_1);
+        channel_lock.unlock();
 
-        auto &tp_table = it_1->second;
-        for (auto &kv : tp_table)
+        for (int i = 0; i < e_chan_group_count; ++i)
         {
-            kv.second.TryPush(ec);
+            std::unique_lock<co_mutex> map_lock(chan_grp->mtxs[i]);
+            chan_grp->closed[i] = true;
+            auto &map = chan_grp->maps[i];
+            for (auto &kv : map)
+                kv.second.TryPush(ec);
         }
-
-        channels_.erase(tp.get());
     }
 
 //    static std::string to_14_hex(const char* data, size_t len)
@@ -204,24 +220,31 @@ namespace ucorf
 //                header->GetService().c_str(), header->GetMethod().c_str(), (unsigned long long)header->GetId());
 
         std::size_t msg_id = header->GetId();
-        std::unique_lock<co_mutex> lock(channel_mtx_);
+
+        std::unique_lock<co_mutex> channel_lock(channel_mtx_);
         auto it_1 = channels_.find(tp.get());
         if (channels_.end() == it_1) {
             ucorf_log_warn("discard response because connection was disconnected. srv=%s, method=%s, msgid=%llu",
                     header->GetService().c_str(), header->GetMethod().c_str(), (unsigned long long)header->GetId());
             return ;
         }
+        auto chan_grp = it_1->second;
+        channel_lock.unlock();
 
-        auto &tp_table = it_1->second;
-        auto it_2 = tp_table.find(msg_id);
-        if (tp_table.end() == it_2) {
+        int map_idx = msg_id & (e_chan_group_count - 1);
+
+        RspChanMap &chan_map = chan_grp->maps[map_idx];
+        co_mutex &mtx = chan_grp->mtxs[map_idx];
+
+        std::unique_lock<co_mutex> map_lock(mtx);
+        auto it_2 = chan_map.find(msg_id);
+        if (chan_map.end() == it_2) {
             ucorf_log_warn("discard response because stub was timeout. srv=%s, method=%s, msgid=%llu",
                     header->GetService().c_str(), header->GetMethod().c_str(), (unsigned long long)header->GetId());
             return ;
         }
-
         auto chan = it_2->second;
-        lock.unlock();
+        map_lock.unlock();
 
         ResponseData rsp;
         rsp.header = header;
