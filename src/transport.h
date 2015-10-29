@@ -37,6 +37,7 @@ namespace ucorf
         virtual boost_ec Connect(std::string const& url) = 0;
         virtual void Send(const void* data, size_t bytes, OnSndF const& cb = NULL) = 0;
         virtual bool IsEstab() = 0;
+        virtual std::string RemoteUrl() const = 0;
     };
 
 } //namespace ucorf

@@ -9,6 +9,9 @@ namespace ucorf
     class NetTransportServer : public ITransportServer
     {
     public:
+        NetTransportServer();
+        ~NetTransportServer();
+
         virtual void Shutdown();
         virtual void SetReceiveCb(OnReceiveF const&);
         virtual void SetConnectedCb(OnConnectedF const&);
@@ -27,6 +30,9 @@ namespace ucorf
     class NetTransportClient : public ITransportClient
     {
     public:
+        NetTransportClient();
+        ~NetTransportClient();
+
         virtual void Shutdown();
         virtual void SetReceiveCb(OnReceiveF const&);
         virtual void SetConnectedCb(OnConnectedF const&);
@@ -36,9 +42,11 @@ namespace ucorf
         virtual boost_ec Connect(std::string const& url);
         virtual void Send(const void* data, size_t bytes, OnSndF const& cb = NULL);
         virtual bool IsEstab();
+        virtual std::string RemoteUrl() const;
 
     private:
         ::network::Client c_;
+        std::string url_;
     };
 
 } //namespace ucorf

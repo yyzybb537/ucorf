@@ -34,7 +34,14 @@ namespace ucorf
 
     private:
         void OnZookeeperChilds(ZookeeperClient::Children const& nodes,
-                boost::shared_ptr<bool> token);
+                boost::shared_ptr<bool> token, boost::shared_ptr<co_mutex> mutex);
+
+        void ZkModeOnDisconnected(boost::weak_ptr<ITransportClient> tp,
+                SessId id, boost_ec const& ec, std::string url,
+                boost::shared_ptr<bool> token, boost::shared_ptr<co_mutex> mutex);
+
+        void RecursiveConnect(boost::shared_ptr<ITransportClient> sptr, std::string url,
+                boost::shared_ptr<bool> token, boost::shared_ptr<co_mutex> mutex);
 
     private:
         OnConnectedF on_connect_;
@@ -50,10 +57,12 @@ namespace ucorf
         boost::shared_ptr<ITransportClient> single_tp_;
 
         // zookeeper address and path
-        co_mutex destroy_mutex_;
+        boost::shared_ptr<co_mutex> destroy_mutex_;
         boost::shared_ptr<bool> token_;
         std::string zk_addr_;
         std::string zk_path_;
+        typedef std::map<std::string, boost::shared_ptr<ITransportClient>> TransportGroup;
+        TransportGroup transports_;
     };
 
 } //namespace ucorf

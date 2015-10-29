@@ -4,6 +4,15 @@
 namespace ucorf
 {
     // server
+    NetTransportServer::NetTransportServer()
+    {
+        ucorf_log_debug("NetTransportServer construct.");
+    }
+    NetTransportServer::~NetTransportServer()
+    {
+        ucorf_log_debug("NetTransportServer destruct.");
+    }
+
     void NetTransportServer::Shutdown()
     {
         s_.Shutdown();
@@ -56,6 +65,15 @@ namespace ucorf
     }
 
     // client
+    NetTransportClient::NetTransportClient()
+    {
+        ucorf_log_debug("NetTransportClient construct.");
+    }
+    NetTransportClient::~NetTransportClient()
+    {
+        ucorf_log_debug("NetTransportClient destruct.");
+    }
+
     void NetTransportClient::Shutdown()
     {
         c_.Shutdown();
@@ -93,6 +111,7 @@ namespace ucorf
 
     boost_ec NetTransportClient::Connect(std::string const& url)
     {
+        url_ = url;
         return c_.Connect(url);
     }
     void NetTransportClient::Send(const void* data, size_t bytes, OnSndF const& cb)
@@ -104,6 +123,10 @@ namespace ucorf
         auto proto = c_.GetProtocol();
         if (!proto) return false;
         return c_.GetProtocol()->IsEstab(c_.GetSessId());
+    }
+    std::string NetTransportClient::RemoteUrl() const
+    {
+        return url_;
     }
 
 } //namespace ucorf
