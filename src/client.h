@@ -57,6 +57,7 @@ namespace ucorf
         typedef std::unordered_map<ITransportClient*, std::unordered_map<std::size_t, RspChan>> ChannelMap;
         StubMap stubs_;
         std::string url_;
+        co_mutex channel_mtx_;
         ChannelMap channels_;
         HeaderFactory head_factory_;
         TransportFactory tp_factory_;

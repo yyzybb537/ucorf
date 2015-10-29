@@ -72,7 +72,7 @@ namespace ucorf
             tp = dispatcher_->Get(service_name, method_name, request);
         }
 
-        if (!tp->IsEstab()) {
+        if (!tp || !tp->IsEstab()) {
             return MakeUcorfErrorCode(eUcorfErrorCode::ec_no_estab);
         }
 
@@ -91,7 +91,10 @@ namespace ucorf
             tp->Send(&buf[0], buf.size());
         } else {
             auto chan = RspChan(1);
-            channels_[tp.get()].insert(std::make_pair(msg_id, chan)).first;
+            {
+                std::unique_lock<co_mutex> lock(channel_mtx_);
+                channels_[tp.get()].insert(std::make_pair(msg_id, chan)).first;
+            }
             tp->Send(&buf[0], buf.size(), [=](boost_ec const& ec){
                         if (ec) {
                             chan.TryPush(ec);
@@ -105,11 +108,14 @@ namespace ucorf
             ResponseData rsp;
             chan >> rsp;
 
-            auto it1 = channels_.find(tp.get());
-            if (it1 != channels_.end()) {
-                auto it2 = it1->second.find(msg_id);
-                if (it2 != it1->second.end())
-                    it1->second.erase(it2);
+            {
+                std::unique_lock<co_mutex> lock(channel_mtx_);
+                auto it1 = channels_.find(tp.get());
+                if (it1 != channels_.end()) {
+                    auto it2 = it1->second.find(msg_id);
+                    if (it2 != it1->second.end())
+                        it1->second.erase(it2);
+                }
             }
 
             if (rsp.ec)
@@ -130,6 +136,7 @@ namespace ucorf
     {
         dispatcher_->Del(tp);
 
+        std::unique_lock<co_mutex> lock(channel_mtx_);
         auto it_1 = channels_.find(tp.get());
         if (channels_.end() == it_1) return ;
 
@@ -197,6 +204,7 @@ namespace ucorf
 //                header->GetService().c_str(), header->GetMethod().c_str(), (unsigned long long)header->GetId());
 
         std::size_t msg_id = header->GetId();
+        std::unique_lock<co_mutex> lock(channel_mtx_);
         auto it_1 = channels_.find(tp.get());
         if (channels_.end() == it_1) {
             ucorf_log_warn("discard response because connection was disconnected. srv=%s, method=%s, msgid=%llu",
@@ -212,7 +220,9 @@ namespace ucorf
             return ;
         }
 
-        auto &chan = it_2->second;
+        auto chan = it_2->second;
+        lock.unlock();
+
         ResponseData rsp;
         rsp.header = header;
         rsp.data.resize(bytes);

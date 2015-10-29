@@ -3,6 +3,7 @@
 #include "demo.rpc.h"
 #include <iostream>
 #include <boost/smart_ptr/make_shared.hpp>
+#include <boost/thread.hpp>
 using std::cout;
 using std::endl;
 using namespace Echo;
@@ -35,9 +36,13 @@ int main(int argc, char **argv)
         return boost::static_pointer_cast<IHeader>(boost::make_shared<UcorfHead>());
     };
 
-    std::string url = "tcp://127.0.0.1:8080";
+    int thread_c = 2;
     if (argc > 1)
-        url = argv[1];
+        thread_c = atoi(argv[1]);
+
+    std::string url = "tcp://127.0.0.1:8080";
+    if (argc > 2)
+        url = argv[2];
 
     std::unique_ptr<NetTransportServer> tp(new NetTransportServer);
     boost_ec ec = tp->Listen(url);
@@ -45,7 +50,7 @@ int main(int argc, char **argv)
         cout << "listen error: " << ec.message() << endl;
         return 1;
     } else {
-        cout << "start success" << endl;
+        cout << "start success, listen " << url << ", thread=" << thread_c << endl;
     }
 
     ::network::OptionsUser tp_opt;
@@ -67,6 +72,9 @@ int main(int argc, char **argv)
         }
     };
 
-    co_sched.RunLoop();
+    boost::thread_group tg;
+    for (int i = 0; i < thread_c; ++i)
+        tg.create_thread([]{ co_sched.RunLoop(); });
+    tg.join_all();
     return 0;
 }

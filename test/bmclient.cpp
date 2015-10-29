@@ -6,11 +6,13 @@
 #include <iostream>
 #include <cstdio>
 #include <boost/smart_ptr/make_shared.hpp>
+#include <boost/thread.hpp>
 using std::cout;
 using std::endl;
 using namespace Echo;
 
 static int concurrecy = 100;
+static int thread_c = 2;
 static std::atomic<size_t> g_count{0};
 static std::atomic<size_t> g_error{0};
 static int g_all_time{0};
@@ -21,7 +23,7 @@ void show_status()
 {
     static int c = 0;
     if (c++ % 10 == 0) {
-        std::printf("------------------------- Co: %5d ------------------------------\n", concurrecy);
+        std::printf("--------------------- Co: %5d  Thread: %d --------------------------\n", concurrecy, thread_c);
         std::printf("|   QPS   |  error  | average D | max D | Interval | last_error   \n");
     }
 
@@ -53,9 +55,12 @@ int main(int argc, char** argv)
         concurrecy = atoi(argv[1]);
     }
 
-    std::string url = "tcp://127.0.0.1:8080";
     if (argc > 2)
-        url = argv[2];
+        thread_c = atoi(argv[2]);
+
+    std::string url = "tcp://127.0.0.1:8080";
+    if (argc > 3)
+        url = argv[3];
 
     FILE * lg = fopen("log", "a+");
     if (!lg) {
@@ -122,7 +127,9 @@ int main(int argc, char** argv)
         }
     };
 
-    co_sched.RunLoop();
-
+    boost::thread_group tg;
+    for (int i = 0; i < thread_c; ++i)
+        tg.create_thread([]{ co_sched.RunLoop(); });
+    tg.join_all();
     return 0;
 }
