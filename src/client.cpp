@@ -16,8 +16,8 @@ namespace ucorf
     Client& Client::SetOption(boost::shared_ptr<Option> opt)
     {
         opt_ = opt;
-        if (srv_finder_)
-            srv_finder_->SetOption(opt_);
+        for (auto &finder : srv_finders_)
+            finder->SetOption(opt_);
         return *this;
     }
 
@@ -36,14 +36,13 @@ namespace ucorf
 
     Client& Client::SetServerFinder(std::unique_ptr<ServerFinder> && srv_finder)
     {
-        srv_finder_.reset();
-        srv_finder_.swap(srv_finder);
-        srv_finder_->SetConnectedCb(boost::bind(&Client::OnConnected, this, _1, _2));
-        srv_finder_->SetReceiveCb(boost::bind(&Client::OnReceiveData, this, _1, _2, _3, _4));
-        srv_finder_->SetDisconnectedCb(boost::bind(&Client::OnDisconnected, this, _1, _2, _3));
-        srv_finder_->SetOption(opt_);
+        srv_finder->SetConnectedCb(boost::bind(&Client::OnConnected, this, _1, _2));
+        srv_finder->SetReceiveCb(boost::bind(&Client::OnReceiveData, this, _1, _2, _3, _4));
+        srv_finder->SetDisconnectedCb(boost::bind(&Client::OnDisconnected, this, _1, _2, _3));
+        srv_finder->SetOption(opt_);
         if (!url_.empty())
-            srv_finder_->Init(url_, tp_factory_);
+            srv_finder->Init(url_, tp_factory_);
+        srv_finders_.emplace_back(std::move(srv_finder));
         return *this;
     }
 
@@ -56,8 +55,8 @@ namespace ucorf
     Client& Client::SetUrl(std::string const& url)
     {
         url_ = url;
-        if (srv_finder_)
-            srv_finder_->Init(url_, tp_factory_);
+        for (auto &finder : srv_finders_)
+            finder->Init(url_, tp_factory_);
         return *this;
     }
 
@@ -67,8 +66,19 @@ namespace ucorf
     {
         boost::shared_ptr<ITransportClient> tp = dispatcher_->Get(service_name, method_name, request);
         if (!tp) {
-            boost_ec ec = srv_finder_->ReConnect();
-            if (ec) return ec;
+            bool ok = false;
+            boost_ec last_ec;
+            for (auto &finder : srv_finders_) {
+                boost_ec ec = finder->ReConnect();
+                if (ec) {
+                    last_ec = ec;
+                    ucorf_log_error("connect to %s error: %s", url_.c_str(), ec.message().c_str());
+                } else
+                    ok = true;
+            }
+            if (!ok)
+                return last_ec;
+
             tp = dispatcher_->Get(service_name, method_name, request);
         }
 

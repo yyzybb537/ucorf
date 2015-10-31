@@ -44,7 +44,7 @@ namespace ucorf
         boost::weak_ptr<ITransportClient> weak(single_tp_);
         single_tp_->SetConnectedCb([=](SessId id){ on_connect_(weak.lock(), id); });
         single_tp_->SetReceiveCb([=](SessId id, const char* data, size_t len){ return on_receive_(weak.lock(), id, data, len); });
-        single_tp_->SetDisconnectedCb([=](SessId id, boost_ec const& ec){ on_disconnect_(weak.lock(), id, ec); });
+        single_tp_->SetDisconnectedCb(boost::bind(&ServerFinder::OnDisconnected, this, weak, _1, _2, url, token_, destroy_mutex_));
     }
 
     void ServerFinder::SetConnectedCb(OnConnectedF const& cb)
@@ -103,7 +103,7 @@ namespace ucorf
                 boost::weak_ptr<ITransportClient> weak(tp);
                 tp->SetConnectedCb([=](SessId id){ on_connect_(weak.lock(), id); });
                 tp->SetReceiveCb([=](SessId id, const char* data, size_t len){ return on_receive_(weak.lock(), id, data, len); });
-                tp->SetDisconnectedCb(boost::bind(&ServerFinder::ZkModeOnDisconnected, this, weak, _1, _2, url, token_, destroy_mutex_));
+                tp->SetDisconnectedCb(boost::bind(&ServerFinder::OnDisconnected, this, weak, _1, _2, url, token_, destroy_mutex_));
                 go [=]{ RecursiveConnect(tp, url, token_, destroy_mutex_); };
             }
         }
@@ -119,7 +119,7 @@ namespace ucorf
         }
     }
 
-    void ServerFinder::ZkModeOnDisconnected(boost::weak_ptr<ITransportClient> weak,
+    void ServerFinder::OnDisconnected(boost::weak_ptr<ITransportClient> weak,
             SessId id, boost_ec const& ec, std::string url,
             boost::shared_ptr<bool> token, boost::shared_ptr<co_mutex> mutex)
     {
@@ -130,7 +130,7 @@ namespace ucorf
         auto sptr = weak.lock();
         if (!sptr) return ;
 
-        if (transports_.count(url))
+        if (mode_ == eMode::single || transports_.count(url))
             go [=]{ RecursiveConnect(sptr, url, token, mutex); };
 
         if (on_disconnect_)
@@ -151,7 +151,7 @@ namespace ucorf
                 std::unique_lock<co_mutex> lock(*mutex, std::defer_lock);
                 if (!lock.try_lock()) return ;
                 if (!*token) return ;
-                if (!transports_.count(url)) return ;
+                if (mode_ == eMode::zk && !transports_.count(url)) return ;
             }
 
             go [=]{ RecursiveConnect(sptr, url, token, mutex); };

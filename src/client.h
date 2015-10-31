@@ -72,7 +72,7 @@ namespace ucorf
         ChannelMap channels_;
         HeaderFactory head_factory_;
         TransportFactory tp_factory_;
-        std::unique_ptr<ServerFinder> srv_finder_;
+        std::list<std::unique_ptr<ServerFinder>> srv_finders_;
         std::unique_ptr<IDispatcher> dispatcher_;
         std::atomic<std::size_t> msg_id_{0};
         boost::shared_ptr<Option> opt_;

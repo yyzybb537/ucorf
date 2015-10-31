@@ -62,14 +62,14 @@ int main(int argc, char** argv)
     if (argc > 3)
         url = argv[3];
 
-    FILE * lg = fopen("log", "a+");
-    if (!lg) {
-        cout << "open log error:" << strerror(errno) << endl;
-        return 1;
-    }
-
-    co_sched.GetOptions().debug_output = lg;
-    co_sched.GetOptions().debug = co::dbg_all;
+//    FILE * lg = fopen("log", "a+");
+//    if (!lg) {
+//        cout << "open log error:" << strerror(errno) << endl;
+//        return 1;
+//    }
+//
+//    co_sched.GetOptions().debug_output = lg;
+//    co_sched.GetOptions().debug = co::dbg_all;
 
     auto header_factory = [] {
         return boost::static_pointer_cast<IHeader>(boost::make_shared<UcorfHead>());
@@ -86,14 +86,16 @@ int main(int argc, char** argv)
     opt->rcv_timeout_ms = 0;
 
     std::unique_ptr<RobinDispatcher> dispatcher(new RobinDispatcher);
-    std::unique_ptr<ServerFinder> finder(new ServerFinder);
     Client client;
     client.SetOption(opt)
         .SetTransportFactory(tp_factory)
         .SetHeaderFactory(header_factory)
-        .SetServerFinder(std::move(finder))
         .SetDispatcher(std::move(dispatcher))
         .SetUrl(url);
+    for (int i = 0; i < thread_c; ++i) {
+        std::unique_ptr<ServerFinder> finder(new ServerFinder);
+        client.SetServerFinder(std::move(finder));
+    }
     UcorfEchoServiceStub stub(&client);
 
     for (int i = 0; i < concurrecy; ++i)

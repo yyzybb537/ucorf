@@ -36,7 +36,7 @@ namespace ucorf
         void OnZookeeperChilds(ZookeeperClient::Children const& nodes,
                 boost::shared_ptr<bool> token, boost::shared_ptr<co_mutex> mutex);
 
-        void ZkModeOnDisconnected(boost::weak_ptr<ITransportClient> tp,
+        void OnDisconnected(boost::weak_ptr<ITransportClient> tp,
                 SessId id, boost_ec const& ec, std::string url,
                 boost::shared_ptr<bool> token, boost::shared_ptr<co_mutex> mutex);
 
