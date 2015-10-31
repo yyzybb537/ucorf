@@ -1,5 +1,5 @@
 TODO:
-ZK服务注册与发现
+single client的retry bug.
 一致性hash负载均衡
 完善过载保护
 
@@ -7,5 +7,6 @@ ZK服务注册与发现
 提供rpc接口版本号校验, 检验interface签名
 
 DONE:
+ZK服务注册与发现
 增加调试log模块, 输出链接相关信息
 解决并发超过500导致的频繁错误问题
