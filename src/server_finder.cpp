@@ -147,6 +147,8 @@ namespace ucorf
             ucorf_log_error("connect to %s error: %s.", url.c_str(), ec.message().c_str());
             co_sleep(3000);
 
+            if (sptr->IsEstab()) return ;
+
             {
                 std::unique_lock<co_mutex> lock(*mutex, std::defer_lock);
                 if (!lock.try_lock()) return ;
