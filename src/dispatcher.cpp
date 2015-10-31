@@ -1,7 +1,9 @@
 #include "dispatcher.h"
+#include "logger.h"
 
 namespace ucorf
 {
+    // Robin
     void RobinDispatcher::Add(boost::shared_ptr<ITransportClient> tp)
     {
         std::unique_lock<co_mutex> lock(mutex_);
@@ -24,6 +26,58 @@ namespace ucorf
 
         robin_idx_ = (++robin_idx_) % tp_list_.size();
         return tp_list_[robin_idx_];
+    }
+
+    // Hash
+    void HashDispatcher::Add(boost::shared_ptr<ITransportClient> tp)
+    {
+        std::unique_lock<co_mutex> lock(mutex_);
+        std::string hashkey = GetHashKey(tp);
+        if (!vir_count_)
+            conhash_table_.insert(hashkey, tp);
+        else
+            conhash_table_.insert(hashkey, tp, vir_count_);
+    }
+    void HashDispatcher::Del(boost::shared_ptr<ITransportClient> tp)
+    {
+        std::unique_lock<co_mutex> lock(mutex_);
+        std::string hashkey = GetHashKey(tp);
+        conhash_table_.erase(hashkey);
+    }
+    boost::shared_ptr<ITransportClient> HashDispatcher::Get(
+            std::string const& service_name,
+            std::string const& method_name, IMessage *request)
+    {
+        std::unique_lock<co_mutex> lock(mutex_);
+        if (hash_fn_) {
+            std::size_t hashcode = hash_fn_(service_name, method_name, request);
+            return conhash_table_.hget(hashcode);
+        } else {
+            return conhash_table_.get(std::to_string(++hash_idx_));
+        }
+    }
+    void HashDispatcher::SetVirtualCount(std::size_t vir_count)
+    {
+        std::unique_lock<co_mutex> lock(mutex_);
+        vir_count_ = vir_count;
+    }
+    void HashDispatcher::SetHashFunction(HashF fn)
+    {
+        std::unique_lock<co_mutex> lock(mutex_);
+        hash_fn_ = fn;
+    }
+    void HashDispatcher::SetHashTagFunction(HashTagF fn)
+    {
+        std::unique_lock<co_mutex> lock(mutex_);
+        hash_tag_fn_ = fn;
+    }
+    std::string HashDispatcher::GetHashKey(boost::shared_ptr<ITransportClient> tp)
+    {
+        std::string url = tp->RemoteUrl();
+        if (hash_tag_fn_)
+            return hash_tag_fn_(url);
+
+        return url;
     }
 
 } //namespace ucorf

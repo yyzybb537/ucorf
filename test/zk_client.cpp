@@ -25,7 +25,7 @@ int main(int argc, char **argv)
         return (ITransportClient*)new NetTransportClient;
     };
 
-    std::unique_ptr<RobinDispatcher> dispatcher(new RobinDispatcher);
+    std::unique_ptr<HashDispatcher> dispatcher(new HashDispatcher);
     std::unique_ptr<ServerFinder> finder(new ServerFinder);
     Client client;
     client.SetTransportFactory(tp_factory)
