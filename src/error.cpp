@@ -31,6 +31,9 @@ std::string ucorf_error_category::message(int v) const
 
         case (int)eUcorfErrorCode::ec_unsupport_protocol:
             return "unsupport protocol";
+
+        case (int)eUcorfErrorCode::ec_req_wnd_full:
+            return "request window was full";
     }
 
     return "";

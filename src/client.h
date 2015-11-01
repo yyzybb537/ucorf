@@ -75,6 +75,7 @@ namespace ucorf
         std::list<std::unique_ptr<ServerFinder>> srv_finders_;
         std::unique_ptr<IDispatcher> dispatcher_;
         std::atomic<std::size_t> msg_id_{0};
+        std::atomic<std::size_t> wnd_size_{0};
         boost::shared_ptr<Option> opt_;
     };
 

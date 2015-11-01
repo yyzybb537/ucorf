@@ -64,6 +64,9 @@ namespace ucorf
             std::string const& method_name,
             IMessage *request, IMessage *response)
     {
+        if (wnd_size_ > opt_->request_wnd_size)
+            return MakeUcorfErrorCode(eUcorfErrorCode::ec_req_wnd_full);
+
         boost::shared_ptr<ITransportClient> tp = dispatcher_->Get(service_name, method_name, request);
         if (!tp) {
             bool ok = false;
@@ -129,8 +132,12 @@ namespace ucorf
                                 });
                         }
                     });
+            ++wnd_size_;
+
             ResponseData rsp;
             chan >> rsp;
+
+            --wnd_size_;
 
             {
                 std::unique_lock<co_mutex> map_lock(mtx);

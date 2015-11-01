@@ -17,6 +17,7 @@ namespace ucorf
         ec_parse_error  = 4,
         ec_no_estab     = 5,
         ec_unsupport_protocol   = 6,
+        ec_req_wnd_full = 7,
     };
 
     class ucorf_error_category
