@@ -36,7 +36,7 @@ int main(int argc, char **argv)
         return boost::static_pointer_cast<IHeader>(boost::make_shared<UcorfHead>());
     };
 
-    int thread_c = 2;
+    int thread_c = 4;
     if (argc > 1)
         thread_c = atoi(argv[1]);
 

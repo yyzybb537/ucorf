@@ -12,7 +12,7 @@ using std::endl;
 using namespace Echo;
 
 static int concurrecy = 100;
-static int thread_c = 2;
+static int thread_c = 1;
 static std::atomic<size_t> g_count{0};
 static std::atomic<size_t> g_error{0};
 static int g_all_time{0};
