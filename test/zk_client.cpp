@@ -2,7 +2,7 @@
 #include <ucorf/net_transport.h>
 #include <ucorf/dispatcher.h>
 #include <ucorf/server_finder.h>
-#include "demo.rpc.h"
+#include "echo.rpc.h"
 #include <iostream>
 #include <boost/smart_ptr/make_shared.hpp>
 using std::cout;

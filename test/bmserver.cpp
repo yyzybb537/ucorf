@@ -1,6 +1,6 @@
 #include <ucorf/server.h>
 #include <ucorf/net_transport.h>
-#include "demo.rpc.h"
+#include "echo.rpc.h"
 #include <iostream>
 #include <boost/smart_ptr/make_shared.hpp>
 #include <boost/thread.hpp>
