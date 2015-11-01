@@ -227,6 +227,9 @@ namespace ucorf
                 co_yield;
         }
 
+        if (yield_c <= 0xff)
+            co_yield;
+
 //        ucorf_log_debug("consume %u bytes from %u bytes", (unsigned)consume, (unsigned)bytes);
         return consume;
     }
