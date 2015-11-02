@@ -11,7 +11,6 @@ include_directories("${PROJECT_SOURCE_DIR}/third_party/cpp_features/coroutine/li
 
 aux_source_directory(${PROJECT_SOURCE_DIR}/src SRC_LIST)
 add_library(ucorf ${SRC_LIST})
-add_dependencies(ucorf "coroutine")
 
 set(CMAKE_INSTALL_PREFIX "/usr/local")
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/src/ DESTINATION "include/ucorf" PATTERN *.h)
