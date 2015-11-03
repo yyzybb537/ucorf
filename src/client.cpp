@@ -2,12 +2,17 @@
 #include "error.h"
 #include "dispatcher.h"
 #include "logger.h"
+#include "message.h"
+#include "net_transport.h"
 
 namespace ucorf
 {
     Client::Client()
-        : opt_(new Option)
-    {}
+        : opt_(new Option), dispatcher_(new RobinDispatcher),
+        head_factory_(&UcorfHead::Factory), default_srv_finder_(new ServerFinder),
+        tp_factory_([]{ return static_cast<ITransportClient*>(new NetTransportClient); })
+    {
+    }
 
     Client::~Client()
     {
@@ -36,6 +41,8 @@ namespace ucorf
 
     Client& Client::SetServerFinder(std::unique_ptr<ServerFinder> && srv_finder)
     {
+        if (default_srv_finder_) default_srv_finder_.reset();
+
         srv_finder->SetConnectedCb(boost::bind(&Client::OnConnected, this, _1, _2));
         srv_finder->SetReceiveCb(boost::bind(&Client::OnReceiveData, this, _1, _2, _3, _4));
         srv_finder->SetDisconnectedCb(boost::bind(&Client::OnDisconnected, this, _1, _2, _3));
@@ -55,6 +62,9 @@ namespace ucorf
     Client& Client::SetUrl(std::string const& url)
     {
         url_ = url;
+        if (default_srv_finder_)
+            default_srv_finder_->Init(url_, tp_factory_);
+
         for (auto &finder : srv_finders_)
             finder->Init(url_, tp_factory_);
         return *this;

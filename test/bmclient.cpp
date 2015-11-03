@@ -71,31 +71,17 @@ int main(int argc, char** argv)
 //    co_sched.GetOptions().debug_output = lg;
 //    co_sched.GetOptions().debug = co::dbg_all;
 
-    auto header_factory = [] {
-        return boost::static_pointer_cast<IHeader>(boost::make_shared<UcorfHead>());
-    };
-
-    auto tp_factory = [] {
-        return (ITransportClient*)new NetTransportClient;
-    };
-
     ::network::OptionsUser tp_opt;
     tp_opt.max_pack_size_ = 40960;
     auto opt = boost::make_shared<Option>();
     opt->transport_opt = tp_opt;
     opt->rcv_timeout_ms = 0;
 
-    std::unique_ptr<RobinDispatcher> dispatcher(new RobinDispatcher);
     Client client;
-    client.SetOption(opt)
-        .SetTransportFactory(tp_factory)
-        .SetHeaderFactory(header_factory)
-        .SetDispatcher(std::move(dispatcher))
-        .SetUrl(url);
-    for (int i = 0; i < thread_c; ++i) {
-        std::unique_ptr<ServerFinder> finder(new ServerFinder);
-        client.SetServerFinder(std::move(finder));
-    }
+    for (int i = 0; i < thread_c; ++i)
+        client.SetServerFinder(std::unique_ptr<ServerFinder>(new ServerFinder));
+    client.SetOption(opt).SetUrl(url);
+    
     UcorfEchoServiceStub stub(&client);
 
     for (int i = 0; i < concurrecy; ++i)

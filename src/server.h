@@ -22,22 +22,24 @@ namespace ucorf
         typedef boost::function<IMessage*(std::string const&, std::string const&)> MessageFactory;
 
         Server();
-
         ~Server();
 
         Server& SetOption(boost::shared_ptr<Option> opt);
 
-        Server& BindTransport(std::unique_ptr<ITransportServer> && transport);
-
-        Server& SetHeaderFactory(HeaderFactory const& head_factory);
-
-        Server& SetRegister(boost::shared_ptr<IServerRegister> reg);
-
         bool RegisterTo(std::string const& url);
 
-        bool RegisterService(std::shared_ptr<IService> service);
+        bool RegisterService(boost::shared_ptr<IService> service);
 
         void RemoveService(std::string const& service_name);
+
+        boost_ec Listen(std::string const& url);
+
+        /// --------------------------- extend method ---------------------------
+    public:
+        Server& BindTransport(std::unique_ptr<ITransportServer> && transport);
+        Server& SetHeaderFactory(HeaderFactory const& head_factory);
+        Server& SetRegister(boost::shared_ptr<IServerRegister> reg);
+        /// ---------------------------------------------------------------------
 
     private:
         void OnConnected(ITransportServer *tp, SessId sess_id);
@@ -47,14 +49,14 @@ namespace ucorf
         bool DispatchMsg(Session sess, const char* data, size_t bytes);
 
     private:
-        typedef std::map<std::string, std::shared_ptr<IService>> ServiceMap;
+        typedef std::map<std::string, boost::shared_ptr<IService>> ServiceMap;
         typedef std::list<std::unique_ptr<ITransportServer>> TransportList;
 
         ServiceMap services_;
-        TransportList transports_;
-        HeaderFactory head_factory_;
         boost::shared_ptr<Option> opt_;
         boost::shared_ptr<IServerRegister> register_;
+        HeaderFactory head_factory_;
+        TransportList transports_;
     };
 
 } //namespace ucorf

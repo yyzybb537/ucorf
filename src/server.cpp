@@ -4,11 +4,13 @@
 #include "logger.h"
 #include "zookeeper.h"
 #include <boost/algorithm/string.hpp>
+#include "net_transport.h"
 
 namespace ucorf
 {
     Server::Server()
-        : opt_(new Option), register_(new ZookeeperRegister)
+        : opt_(new Option), register_(new ZookeeperRegister),
+        head_factory_(&UcorfHead::Factory)
     {
     }
 
@@ -64,7 +66,7 @@ namespace ucorf
         return true;
     }
 
-    bool Server::RegisterService(std::shared_ptr<IService> service)
+    bool Server::RegisterService(boost::shared_ptr<IService> service)
     {
         std::string name = service->name();
         return services_.insert(std::make_pair(name, service)).second;
@@ -73,6 +75,15 @@ namespace ucorf
     void Server::RemoveService(std::string const& service_name)
     {
         services_.erase(service_name);
+    }
+
+    boost_ec Server::Listen(std::string const& url)
+    {
+        std::unique_ptr<ITransportServer> tp(new NetTransportServer);
+        boost_ec ec = tp->Listen(url);
+        if (ec) return ec;
+        BindTransport(std::move(tp));
+        return boost_ec();
     }
 
     void Server::OnConnected(ITransportServer *tp, SessId sess_id)

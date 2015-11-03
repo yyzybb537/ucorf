@@ -32,10 +32,6 @@ int main(int argc, char **argv)
 {
     using namespace ucorf;
 
-    auto header_factory = [] {
-        return boost::static_pointer_cast<IHeader>(boost::make_shared<UcorfHead>());
-    };
-
     int thread_c = 4;
     if (argc > 1)
         thread_c = atoi(argv[1]);
@@ -44,26 +40,20 @@ int main(int argc, char **argv)
     if (argc > 2)
         url = argv[2];
 
-    std::unique_ptr<NetTransportServer> tp(new NetTransportServer);
-    boost_ec ec = tp->Listen(url);
+    ::network::OptionsUser tp_opt;
+    tp_opt.max_pack_size_ = 40960;
+    auto opt = boost::make_shared<Option>();
+    opt->transport_opt = tp_opt;
+
+    Server server;
+    server.SetOption(opt).RegisterService(boost::shared_ptr<IService>(new MyEcho));
+    boost_ec ec = server.Listen(url);
     if (ec) {
         cout << "listen error: " << ec.message() << endl;
         return 1;
     } else {
         cout << "start success, listen " << url << ", thread=" << thread_c << endl;
     }
-
-    ::network::OptionsUser tp_opt;
-    tp_opt.max_pack_size_ = 40960;
-    auto opt = boost::make_shared<Option>();
-    opt->transport_opt = tp_opt;
-
-    std::shared_ptr<IService> echo_srv(new MyEcho);
-    Server server;
-    server.SetOption(opt)
-        .BindTransport(std::move(tp))
-        .SetHeaderFactory(header_factory)
-        .RegisterService(echo_srv);
 
     go []{
         for (;;) {

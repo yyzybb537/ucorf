@@ -25,23 +25,16 @@ int main(int argc, char **argv)
     if (argc > 1)
         url = argv[1];
 
-    auto header_factory = [] {
-        return boost::static_pointer_cast<IHeader>(boost::make_shared<UcorfHead>());
-    };
-
-    std::unique_ptr<NetTransportServer> tp(new NetTransportServer);
-    boost_ec ec = tp->Listen(url);
+    boost::shared_ptr<IService> echo_srv(new MyEcho);
+    Server server;
+    server.RegisterService(echo_srv);
+    boost_ec ec = server.Listen(url);
     if (ec) {
         cout << "listen " << url << " error: " << ec.message() << endl;
         return 1;
     } else {
         cout << "start success: " << url << endl;
     }
-
-    std::shared_ptr<IService> echo_srv(new MyEcho);
-    Server server;
-    server.BindTransport(std::move(tp)).SetHeaderFactory(header_factory)
-        .RegisterService(echo_srv);
 
     co_sched.RunLoop();
     return 0;

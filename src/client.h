@@ -21,20 +21,20 @@ namespace ucorf
 
         Client& SetOption(boost::shared_ptr<Option> opt);
 
-        Client& SetDispatcher(std::unique_ptr<IDispatcher> && dispatcher);
-
-        Client& SetHeaderFactory(HeaderFactory const& head_factory);
-
-        Client& SetServerFinder(std::unique_ptr<ServerFinder> && srv_finder);
-
-        Client& SetTransportFactory(TransportFactory const& factory);
-        
         Client& SetUrl(std::string const& url);
 
         boost_ec Call(std::string const& service_name,
                 std::string const& method_name,
                 IMessage *request, IMessage *response);
 
+        /// ------------------------ extend method --------------------------
+    public:
+        Client& SetDispatcher(std::unique_ptr<IDispatcher> && dispatcher);
+        Client& SetHeaderFactory(HeaderFactory const& head_factory);
+        Client& SetServerFinder(std::unique_ptr<ServerFinder> && srv_finder);
+        Client& SetTransportFactory(TransportFactory const& factory);
+        /// -----------------------------------------------------------------
+        
     private:
         void OnConnected(boost::shared_ptr<ITransportClient> tp, SessId sess_id);
         void OnDisconnected(boost::shared_ptr<ITransportClient> tp, SessId sess_id, boost_ec const& ec);
@@ -70,13 +70,15 @@ namespace ucorf
         std::string url_;
         co_mutex channel_mtx_;
         ChannelMap channels_;
-        HeaderFactory head_factory_;
-        TransportFactory tp_factory_;
-        std::list<std::unique_ptr<ServerFinder>> srv_finders_;
-        std::unique_ptr<IDispatcher> dispatcher_;
         std::atomic<std::size_t> msg_id_{0};
         std::atomic<std::size_t> wnd_size_{0};
+
         boost::shared_ptr<Option> opt_;
+        std::unique_ptr<IDispatcher> dispatcher_;
+        HeaderFactory head_factory_;
+        std::unique_ptr<ServerFinder> default_srv_finder_;
+        std::list<std::unique_ptr<ServerFinder>> srv_finders_;
+        TransportFactory tp_factory_;
     };
 
 } //namespace ucorf

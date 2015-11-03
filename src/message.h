@@ -64,6 +64,8 @@ namespace ucorf
         virtual std::size_t ByteSize();
         virtual std::size_t Parse(const void* buf, std::size_t len);
 
+        static IHeaderPtr Factory();
+
         static const unsigned char magic_code = 0xf8;
         uint8_t calltype;
         uint32_t callid;

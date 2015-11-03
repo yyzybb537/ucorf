@@ -79,4 +79,9 @@ namespace ucorf
         return 14 + service_len + method_len;
     }
 
+    IHeaderPtr UcorfHead::Factory()
+    {
+        return boost::static_pointer_cast<IHeader>(boost::make_shared<UcorfHead>());
+    }
+
 } //namespace ucorf

@@ -14,8 +14,10 @@ namespace ucorf
     {
         std::unique_lock<co_mutex> lock(*destroy_mutex_);
         *token_ = false;
-        auto zk = ZookeeperClientMgr::getInstance().GetZookeeperClient(zk_addr_);
-        zk->Unwatch(zk_path_, this);
+        if (!zk_addr_.empty()) {
+            auto zk = ZookeeperClientMgr::getInstance().GetZookeeperClient(zk_addr_);
+            zk->Unwatch(zk_path_, this);
+        }
     }
 
     void ServerFinder::Init(std::string const& url, TransportFactory const& factory)

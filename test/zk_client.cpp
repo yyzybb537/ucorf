@@ -17,22 +17,9 @@ int main(int argc, char **argv)
     if (argc > 1)
         url = argv[1];
 
-    auto header_factory = [] {
-        return boost::static_pointer_cast<IHeader>(boost::make_shared<UcorfHead>());
-    };
-
-    auto tp_factory = [] {
-        return (ITransportClient*)new NetTransportClient;
-    };
-
     std::unique_ptr<HashDispatcher> dispatcher(new HashDispatcher);
-    std::unique_ptr<ServerFinder> finder(new ServerFinder);
     Client client;
-    client.SetTransportFactory(tp_factory)
-        .SetHeaderFactory(header_factory)
-        .SetServerFinder(std::move(finder))
-        .SetDispatcher(std::move(dispatcher))
-        .SetUrl(url);
+    client.SetDispatcher(std::move(dispatcher)).SetUrl(url);
     UcorfEchoServiceStub stub(&client);
 
     go [&]{
