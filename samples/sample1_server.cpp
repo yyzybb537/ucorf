@@ -1,5 +1,4 @@
-#include <ucorf/server.h>
-#include <ucorf/net_transport.h>
+#include <ucorf/ucorf.h>
 #include "echo.rpc.h"
 #include <iostream>
 using namespace Echo;
