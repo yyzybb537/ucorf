@@ -24,7 +24,7 @@
     $ cmake .. -DCMAKE_BUILD_TYPE=RELEASE
  命令换成
  
-    $cmake ..
+    $ cmake ..
 
 ## 基础用法
 #### 一.URL
@@ -41,4 +41,16 @@
   ucorf是基于协程框架实现的，关于协程的好处及相关知识参见: https://github.com/yyzybb537/cpp_features
   
 #### 三.协议定义与代码生成
-
+  ucorf默认使用protobuf作为通信协议.(如果不满足需求, 请自行扩展)
+  
+  protobuf的IDL语法在此不再赘述, 一个简单例子在test/echo.proto中。
+  
+  生成代码命令如下：
+  
+        $ protoc --cpp_out=. echo.proto
+        $ protoc --rpc_out=. echo.proto
+        
+  
+  
+  
+  
