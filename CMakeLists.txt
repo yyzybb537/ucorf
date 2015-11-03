@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 2.8)
 
 project(ucorf)
-set(CMAKE_CXX_FLAGS "-std=c++11 -Wall -Werror")
-set(CMAKE_CXX_FLAGS_DEBUG "-g ${CMAKE_CXX_FLAGS}")
+set(CXX_FLAGS "-std=c++11 -Wall -Werror")
+set(CMAKE_CXX_FLAGS "-g ${CXX_FLAGS}")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 ${CMAKE_CXX_FLAGS}")
 
 include_directories("${PROJECT_SOURCE_DIR}/third_party/cpp_features")

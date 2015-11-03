@@ -1,6 +1,6 @@
 project(test)
-#set(CMAKE_CXX_FLAGS "-std=c++11 -g")
-set(CMAKE_CXX_FLAGS "-std=c++11 -O3")
+set(CMAKE_CXX_FLAGS "-std=c++11 -g")
+set(CMAKE_CXX_FLAGS_RELEASE "-std=c++11 -O3")
 add_executable(zk_server.t zk_server.cpp echo.rpc.cc echo.pb.cc)
 add_executable(zk_client.t zk_client.cpp echo.rpc.cc echo.pb.cc)
 add_executable(server.t server.cpp echo.rpc.cc echo.pb.cc)

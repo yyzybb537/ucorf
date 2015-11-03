@@ -12,6 +12,10 @@ namespace ucorf
         head_factory_(&UcorfHead::Factory), default_srv_finder_(new ServerFinder),
         tp_factory_([]{ return static_cast<ITransportClient*>(new NetTransportClient); })
     {
+        default_srv_finder_->SetConnectedCb(boost::bind(&Client::OnConnected, this, _1, _2));
+        default_srv_finder_->SetReceiveCb(boost::bind(&Client::OnReceiveData, this, _1, _2, _3, _4));
+        default_srv_finder_->SetDisconnectedCb(boost::bind(&Client::OnDisconnected, this, _1, _2, _3));
+        default_srv_finder_->SetOption(opt_);
     }
 
     Client::~Client()
@@ -21,6 +25,9 @@ namespace ucorf
     Client& Client::SetOption(boost::shared_ptr<Option> opt)
     {
         opt_ = opt;
+        if (default_srv_finder_)
+            default_srv_finder_->SetOption(opt_);
+
         for (auto &finder : srv_finders_)
             finder->SetOption(opt_);
         return *this;
@@ -81,6 +88,15 @@ namespace ucorf
         if (!tp) {
             bool ok = false;
             boost_ec last_ec;
+            if (default_srv_finder_) {
+                boost_ec ec = default_srv_finder_->ReConnect();
+                if (ec) {
+                    last_ec = ec;
+                    ucorf_log_error("connect to %s error: %s", url_.c_str(), ec.message().c_str());
+                } else
+                    ok = true;
+            }
+
             for (auto &finder : srv_finders_) {
                 boost_ec ec = finder->ReConnect();
                 if (ec) {
