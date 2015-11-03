@@ -50,6 +50,11 @@
         $ protoc --cpp_out=. echo.proto
         $ protoc --rpc_out=. echo.proto
         
+  第一行命令是protobuf自带的生成CPP代码的命令，会生成echo.pb.h和echo.pb.cc两个文件。
+  
+  第二行命令是使用ucorf扩展插件的命令，会生成echo.rpc.h和echo.rpc.cc两个文件。
+  
+  使用时只需#include "echo.rpc.h"即可。
   
   
   
