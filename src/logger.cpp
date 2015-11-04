@@ -28,7 +28,7 @@ namespace ucorf
 
     Logger::~Logger()
     {
-        if (file_ != stdout && file_ != stderr)
+        if (file_ && file_ != stdout && file_ != stderr)
             std::fclose(file_);
     }
 
@@ -59,6 +59,8 @@ namespace ucorf
             int line, const char* func,
             const char* fmt, ...)
     {
+        if (!file_) return ;
+
         level = std::max(std::min(eLogLevel::fatal, level), eLogLevel::verbose);
 
         std::ostringstream info;

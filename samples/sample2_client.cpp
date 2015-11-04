@@ -38,7 +38,10 @@ int main(int argc, char **argv)
             std::cout << "Response: " << rsp->code() << endl;
         };
 
-    // 9.启动协程框架主循环
+    // 6.修改Log输出目的地
+    ucorf::Logger::default_instance().Reopen("/dev/null");
+
+    // 7.启动协程框架主循环
     co_sched.RunLoop();
     return 0;
 }
