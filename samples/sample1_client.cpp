@@ -19,6 +19,12 @@ int main(int argc, char **argv)
 
     // 4.启动一个协程
     go [&]{
+        // 为了分布式部署时不存在依赖性，client在后台自动尝试连接服务端、断线重连
+        // 所以写demo测试时, 要等待客户端连上以后再调用
+        // 实际在服务中由于时用户触发的行为，所以不必如此
+        // 和很多框架一样，client的连接尝试是在主循环中开始的, 因此要在协程中sleep
+        co_sleep(500);
+
         // 5.构造RPC调用参数
         EchoRequest request;
         request.set_code(1);

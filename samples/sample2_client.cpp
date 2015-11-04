@@ -22,13 +22,11 @@ int main(int argc, char **argv)
     // 4.创建Stub对象，并绑定Client
     UcorfEchoServiceStub stub(&client);
 
-    /* 5.启动多个协程
-     *  client是在首次被调用的时候才会连接服务端
-     *
-     *
-    */ 
-    for (int i = 0; i < 100; ++i)
+    /* 5.启动多个协程 */ 
+    for (int i = 0; i < 10; ++i)
         go [&]{
+            co_sleep(1000);
+
             // 6.构造RPC调用参数
             EchoRequest request;
             request.set_code(1);
