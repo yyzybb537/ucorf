@@ -1,3 +1,6 @@
+/********************************
+ * Sample1: 最简单的Client
+*********************************/
 #include <ucorf/ucorf.h>
 #include "echo.rpc.h"
 #include <iostream>

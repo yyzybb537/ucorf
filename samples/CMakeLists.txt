@@ -8,6 +8,10 @@ set(LINK_ARGS "-lucorf -lnetwork -lcoroutine -lprotobuf -lboost_thread -lboost_s
 
 add_executable(sample1_server.t sample1_server.cpp ${PROTO_LIST})
 target_link_libraries(sample1_server.t ${LINK_ARGS})
-
 add_executable(sample1_client.t sample1_client.cpp ${PROTO_LIST})
 target_link_libraries(sample1_client.t ${LINK_ARGS})
+
+add_executable(sample2_server.t sample2_server.cpp ${PROTO_LIST})
+target_link_libraries(sample2_server.t ${LINK_ARGS})
+add_executable(sample2_client.t sample2_client.cpp ${PROTO_LIST})
+target_link_libraries(sample2_client.t ${LINK_ARGS})
