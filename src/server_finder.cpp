@@ -47,6 +47,7 @@ namespace ucorf
         single_tp_->SetConnectedCb([=](SessId id){ on_connect_(weak.lock(), id); });
         single_tp_->SetReceiveCb([=](SessId id, const char* data, size_t len){ return on_receive_(weak.lock(), id, data, len); });
         single_tp_->SetDisconnectedCb(boost::bind(&ServerFinder::OnDisconnected, this, weak, _1, _2, url, token_, destroy_mutex_));
+        go [=]{ ReConnect(); };
     }
 
     void ServerFinder::SetConnectedCb(OnConnectedF const& cb)
