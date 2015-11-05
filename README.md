@@ -25,6 +25,15 @@
  命令换成
  
     $ cmake ..
+    
+## 安装依赖的库
+### DEBIAN系Linux：
+
+    $ sudo apt-get install libzookeeper-mt-dev -y
+    $ sudo apt-get install libprotobuf-dev -y
+    $ sudo apt-get install python-protobuf -y
+    $ sudo apt-get install protobuf-compiler -y
+    $ sudo apt-get install libboost-all-dev -y
 
 ## 基础用法
 #### 一.URL
