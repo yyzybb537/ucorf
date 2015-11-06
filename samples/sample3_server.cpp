@@ -32,6 +32,7 @@ int main()
 
     // 5.注册到Zookeeper
     server.RegisterTo("zk://127.0.0.1:2181/ucorf/test");
+    server.RegisterTo("zk://127.0.0.1:2181/ucorf/test2"); // 可以同时注册到不同ZK的多个节点上
 
     // 6.启动协程框架主循环
     co_sched.RunLoop();     

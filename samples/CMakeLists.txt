@@ -20,3 +20,6 @@ add_executable(sample3_server.t sample3_server.cpp ${PROTO_LIST})
 target_link_libraries(sample3_server.t ${LINK_ARGS})
 add_executable(sample3_client.t sample3_client.cpp ${PROTO_LIST})
 target_link_libraries(sample3_client.t ${LINK_ARGS})
+
+add_executable(sample4_client.t sample4_client.cpp ${PROTO_LIST})
+target_link_libraries(sample4_client.t ${LINK_ARGS})

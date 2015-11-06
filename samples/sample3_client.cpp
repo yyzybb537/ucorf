@@ -11,7 +11,7 @@ int main(int argc, char **argv)
     // 1.创建Client对象
     ucorf::Client client;
 
-    // 2.设置服务端地址
+    // 2.设置服务端注册的ZK地址和节点, 格式如下：
     client.SetUrl("zk://127.0.0.1:2181/ucorf/test");
 
     // 3.创建Stub对象，并绑定Client

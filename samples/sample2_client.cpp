@@ -32,10 +32,16 @@ int main(int argc, char **argv)
             request.set_code(1);
 
             // 7.调用RPC接口
-            std::shared_ptr<EchoResponse> rsp = stub.Echo(request);
+            boost_ec ec;
+            std::shared_ptr<EchoResponse> rsp = stub.Echo(request, &ec);
 
-            // 8.获取返回值
-            std::cout << "Response: " << rsp->code() << endl;
+            if (ec) {
+                // 调用失败
+                std::cout << "call error:" << ec.message() << std::endl;
+            } else {
+                // 8.获取返回值
+                std::cout << "Response: " << rsp->code() << endl;
+            }
         };
 
     // 6.修改Log输出目的地
