@@ -63,7 +63,7 @@
   
   第二行命令是使用ucorf扩展插件的命令，会生成echo.rpc.h和echo.rpc.cc两个文件。
   
-  使用时只需#include "echo.rpc.h"即可。
+  使用时只需#include "echo.rpc.h"即可，ucorf中自带的测试代码均依赖echo.proto生成的代码。
   
 #### 四.示例
   一个简单的server:
@@ -138,4 +138,6 @@ int main(int argc, char **argv)
 }
   ~~~~~~~~~~
   
+## 高级用法
+ucorf的高级用法请参见samples目录下的一些示例.
   
