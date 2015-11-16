@@ -1,4 +1,5 @@
 TODO:
+Log模块的reopen改为线程安全
 提供查询RPC直接的srv和interface功能
 提供rpc接口版本号校验, 检验interface签名
 
