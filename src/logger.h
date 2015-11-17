@@ -2,6 +2,7 @@
 
 #include <cstdio>
 #include <string>
+#include <coroutine/coroutine.h>
 
 namespace ucorf
 {
@@ -50,6 +51,7 @@ namespace ucorf
 
     private:
         std::FILE* file_ = stdout;
+        co_rwmutex rw_mtx_;
         std::string destination_;
         eLogLevel level_ = eLogLevel::verbose;
         size_t mask_ = (size_t)eLogFlag::all & ~(size_t)eLogFlag::tid;

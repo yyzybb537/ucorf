@@ -1,5 +1,4 @@
 TODO:
-Log模块的reopen改为线程安全
 提供查询RPC直接的srv和interface功能
 提供rpc接口版本号校验, 检验interface签名
 
@@ -10,3 +9,4 @@ ZK服务注册与发现
 single client的retry bug.
 一致性hash负载均衡
 增加过载保护机制
+Log模块的reopen改为线程安全

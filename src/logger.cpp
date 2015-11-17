@@ -37,6 +37,8 @@ namespace ucorf
         std::FILE* file = std::fopen(destination.c_str(), "a+");
         if (!file) return false;
 
+        std::unique_lock<co_wmutex> lock(rw_mtx_.writer());
+
         if (file_ != stdout && file_ != stderr)
             std::fclose(file_);
 
@@ -114,6 +116,10 @@ namespace ucorf
 
         info << "\n";
         std::string msg = info.str();
+
+        std::unique_lock<co_rmutex> lock(rw_mtx_.reader());
+        if (!file_) return ;
+
         std::fwrite(msg.c_str(), msg.length(), 1, file_);
         std::fflush(file_);
     }
