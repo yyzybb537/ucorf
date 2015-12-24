@@ -19,4 +19,4 @@ install(PROGRAMS ${PROJECT_SOURCE_DIR}/proto_gen/protoc-gen-rpc DESTINATION "bin
 install(PROGRAMS ${PROJECT_SOURCE_DIR}/proto_gen/descriptor_pb2.py DESTINATION "bin")
 install(PROGRAMS ${PROJECT_SOURCE_DIR}/proto_gen/plugin_pb2.py DESTINATION "bin")
 
-add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/cpp_features)
+add_subdirectory("${PROJECT_SOURCE_DIR}/third_party/libgonet")
