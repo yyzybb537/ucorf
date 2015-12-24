@@ -47,7 +47,7 @@
   目前仅支持tcp和udp两种协议。
   
 #### 二.协程
-  ucorf是基于协程框架实现的，关于协程的好处及相关知识参见: https://github.com/yyzybb537/cpp_features
+  ucorf是基于libgo协程库实现的，关于协程的好处及相关知识参见: https://github.com/yyzybb537/libgo
   
 #### 三.协议定义与代码生成
   ucorf默认使用protobuf作为通信协议.(如果不满足需求, 请自行扩展)
