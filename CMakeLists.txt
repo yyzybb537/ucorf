@@ -9,7 +9,7 @@ endif()
 
 message("CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 
-set(CXX_FLAGS "-std=c++11 -Wall -Werror")
+set(CMAKE_CXX_FLAGS "-std=c++11 -Wall -Werror")
 
 include_directories("${PROJECT_SOURCE_DIR}/third_party/cpp_features")
 include_directories("${PROJECT_SOURCE_DIR}/third_party/cpp_features/coroutine")
