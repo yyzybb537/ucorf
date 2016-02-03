@@ -2,7 +2,7 @@
 
 #include "preheader.h"
 #include "transport.h"
-#include <network/network.h>
+#include <libgonet/network.h>
 
 namespace ucorf
 {

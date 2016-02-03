@@ -51,6 +51,11 @@ int main(int argc, char** argv)
 {
     using namespace ucorf;
 
+    if (argc > 1 && std::string(argv[1]) == "-h") {
+        printf("Usage: bmclient.t [ConnectionCount] [ThreadCount] [Address]\n");
+        return 0;
+    }
+
     if (argc > 1) {
         concurrecy = atoi(argv[1]);
     }
@@ -58,7 +63,7 @@ int main(int argc, char** argv)
     if (argc > 2)
         thread_c = atoi(argv[2]);
 
-    std::string url = "tcp://127.0.0.1:8080";
+    std::string url = "tcp://127.0.0.1:48080";
     if (argc > 3)
         url = argv[3];
 
@@ -113,6 +118,11 @@ int main(int argc, char** argv)
             show_status();
             co_sleep(1000);
         }
+    };
+
+    go []{
+        co_sleep(10000);
+        exit(0);
     };
 
     boost::thread_group tg;

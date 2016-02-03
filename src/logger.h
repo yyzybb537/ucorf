@@ -2,7 +2,7 @@
 
 #include <cstdio>
 #include <string>
-#include <coroutine/coroutine.h>
+#include <libgo/coroutine.h>
 
 namespace ucorf
 {

@@ -32,11 +32,16 @@ int main(int argc, char **argv)
 {
     using namespace ucorf;
 
+    if (argc > 1 && std::string(argv[1]) == "-h") {
+        printf("Usage: bmclient.t [ThreadCount] [Address]\n");
+        return 0;
+    }
+
     int thread_c = 4;
     if (argc > 1)
         thread_c = atoi(argv[1]);
 
-    std::string url = "tcp://127.0.0.1:8080";
+    std::string url = "tcp://127.0.0.1:48080";
     if (argc > 2)
         url = argv[2];
 

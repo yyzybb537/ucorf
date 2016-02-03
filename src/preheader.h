@@ -12,7 +12,7 @@
 #include <boost/bind.hpp>
 #include <boost/system/error_code.hpp>
 #include <boost/any.hpp>
-#include <coroutine/coroutine.h>
+#include <libgo/coroutine.h>
 
 // linux
 #include <arpa/inet.h>
