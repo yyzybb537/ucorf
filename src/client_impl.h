@@ -53,7 +53,7 @@ namespace ucorf
         };
 
         // 必须为2的幂
-        enum { e_chan_group_count = 0x80 };
+        enum { e_chan_group_count = 0x10 };
 
         typedef std::map<std::string, ITransportClient*> StubMap;
         typedef co_chan<ResponseData> RspChan;

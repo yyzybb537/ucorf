@@ -38,7 +38,7 @@ namespace ucorf
     private:
         std::vector<boost::shared_ptr<ITransportClient>> tp_list_;
         std::atomic<std::size_t> robin_idx_{0};
-        co_mutex mutex_;
+        co_rwmutex mutex_;
     };
 
     class HashDispatcher : public IDispatcher
@@ -62,7 +62,7 @@ namespace ucorf
         std::string GetHashKey(boost::shared_ptr<ITransportClient> tp);
 
     private:
-        co_mutex mutex_;
+        co_rwmutex mutex_;
         std::size_t vir_count_ = 0;
         HashF hash_fn_;
         HashTagF hash_tag_fn_;

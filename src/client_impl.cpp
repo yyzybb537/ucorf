@@ -127,7 +127,11 @@ namespace ucorf
         header->Serialize(&buf[0], header->ByteSize());
         request->Serialize(&buf[header->ByteSize()], request->ByteSize());
         if (!response) {
-            tp->Send(&buf[0], buf.size());
+            co_chan<boost_ec> cc;
+            tp->Send(&buf[0], buf.size(), [=](boost_ec const& ec) { cc << ec; });
+            boost_ec ec;
+            cc >> ec;
+            return ec;
         } else {
             std::unique_lock<co_mutex> channel_lock(channel_mtx_);
             auto it_1 = channels_.find(tp.get());
@@ -151,17 +155,16 @@ namespace ucorf
             tp->Send(&buf[0], buf.size(), [=](boost_ec const& ec){
                         if (ec) {
                             chan.TryPush(ec);
-                        } else if (opt_->rcv_timeout_ms) {
-                            // start rcv timer.
-                            co_timer_add(std::chrono::milliseconds(opt_->rcv_timeout_ms), [chan]{
-                                    chan.TryPush(MakeUcorfErrorCode(eUcorfErrorCode::ec_rcv_timeout));
-                                });
                         }
                     });
             ++wnd_size_;
 
             ResponseData rsp;
-            chan >> rsp;
+            if (opt_->rcv_timeout_ms) {
+                if (!chan.TimedPop(rsp, std::chrono::milliseconds(opt_->rcv_timeout_ms)))
+                    return MakeUcorfErrorCode(eUcorfErrorCode::ec_rcv_timeout);
+            } else
+                chan >> rsp;
 
             --wnd_size_;
 

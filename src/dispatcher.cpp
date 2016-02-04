@@ -6,12 +6,12 @@ namespace ucorf
     // Robin
     void RobinDispatcher::Add(boost::shared_ptr<ITransportClient> tp)
     {
-        std::unique_lock<co_mutex> lock(mutex_);
+        std::unique_lock<co_wmutex> lock(mutex_.writer());
         tp_list_.push_back(tp);
     }
     void RobinDispatcher::Del(boost::shared_ptr<ITransportClient> tp)
     {
-        std::unique_lock<co_mutex> lock(mutex_);
+        std::unique_lock<co_wmutex> lock(mutex_.writer());
         auto it = std::find(tp_list_.begin(), tp_list_.end(), tp);
         if (it != tp_list_.end())
             tp_list_.erase(it);
@@ -20,7 +20,7 @@ namespace ucorf
     boost::shared_ptr<ITransportClient> RobinDispatcher::Get( std::string const& service_name,
             std::string const& method_name, IMessage *request)
     {
-        std::unique_lock<co_mutex> lock(mutex_);
+        std::unique_lock<co_rmutex> lock(mutex_.reader());
         if (tp_list_.empty())
             return boost::shared_ptr<ITransportClient>();
 
@@ -31,7 +31,7 @@ namespace ucorf
     // Hash
     void HashDispatcher::Add(boost::shared_ptr<ITransportClient> tp)
     {
-        std::unique_lock<co_mutex> lock(mutex_);
+        std::unique_lock<co_wmutex> lock(mutex_.writer());
         std::string hashkey = GetHashKey(tp);
         if (!vir_count_)
             conhash_table_.insert(hashkey, tp);
@@ -40,7 +40,7 @@ namespace ucorf
     }
     void HashDispatcher::Del(boost::shared_ptr<ITransportClient> tp)
     {
-        std::unique_lock<co_mutex> lock(mutex_);
+        std::unique_lock<co_wmutex> lock(mutex_.writer());
         std::string hashkey = GetHashKey(tp);
         conhash_table_.erase(hashkey);
     }
@@ -48,7 +48,7 @@ namespace ucorf
             std::string const& service_name,
             std::string const& method_name, IMessage *request)
     {
-        std::unique_lock<co_mutex> lock(mutex_);
+        std::unique_lock<co_rmutex> lock(mutex_.reader());
         if (hash_fn_) {
             std::size_t hashcode = hash_fn_(service_name, method_name, request);
             return conhash_table_.hget(hashcode);
@@ -58,17 +58,17 @@ namespace ucorf
     }
     void HashDispatcher::SetVirtualCount(std::size_t vir_count)
     {
-        std::unique_lock<co_mutex> lock(mutex_);
+        std::unique_lock<co_wmutex> lock(mutex_.writer());
         vir_count_ = vir_count;
     }
     void HashDispatcher::SetHashFunction(HashF fn)
     {
-        std::unique_lock<co_mutex> lock(mutex_);
+        std::unique_lock<co_wmutex> lock(mutex_.writer());
         hash_fn_ = fn;
     }
     void HashDispatcher::SetHashTagFunction(HashTagF fn)
     {
-        std::unique_lock<co_mutex> lock(mutex_);
+        std::unique_lock<co_wmutex> lock(mutex_.writer());
         hash_tag_fn_ = fn;
     }
     std::string HashDispatcher::GetHashKey(boost::shared_ptr<ITransportClient> tp)
