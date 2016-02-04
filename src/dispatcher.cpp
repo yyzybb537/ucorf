@@ -24,7 +24,8 @@ namespace ucorf
         if (tp_list_.empty())
             return boost::shared_ptr<ITransportClient>();
 
-        robin_idx_ = (++robin_idx_) % tp_list_.size();
+        ++robin_idx_;
+        robin_idx_ = robin_idx_ % tp_list_.size();
         return tp_list_[robin_idx_];
     }
 

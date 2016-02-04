@@ -43,10 +43,14 @@ namespace ucorf
 
     void NetTransportServer::SetOption(boost::any const& opt)
     {
-        if (opt.empty()) return ;
-        ::network::OptionsUser const& data = boost::any_cast<::network::OptionsUser const&>(opt);
-        s_.SetSndTimeout(data.sndtimeo_);
-        s_.SetMaxPackSize(data.max_pack_size_);
+        ::network::OptionsUser net_opt;
+        if (opt.empty()) {
+            net_opt.max_pack_size_ = 64 * 1024;
+            return ;
+        }
+        net_opt = boost::any_cast<::network::OptionsUser const&>(opt);
+        s_.SetSndTimeout(net_opt.sndtimeo_);
+        s_.SetMaxPackSize(net_opt.max_pack_size_);
     }
 
     boost_ec NetTransportServer::Listen(std::string const& url)
@@ -103,10 +107,14 @@ namespace ucorf
     }
     void NetTransportClient::SetOption(boost::any const& opt)
     {
-        if (opt.empty()) return ;
-        ::network::OptionsUser const& data = boost::any_cast<::network::OptionsUser const&>(opt);
-        c_.SetSndTimeout(data.sndtimeo_);
-        c_.SetMaxPackSize(data.max_pack_size_);
+        ::network::OptionsUser net_opt;
+        if (opt.empty()) {
+            net_opt.max_pack_size_ = 64 * 1024;
+            return ;
+        }
+        net_opt = boost::any_cast<::network::OptionsUser const&>(opt);
+        c_.SetSndTimeout(net_opt.sndtimeo_);
+        c_.SetMaxPackSize(net_opt.max_pack_size_);
     }
 
     boost_ec NetTransportClient::Connect(std::string const& url)

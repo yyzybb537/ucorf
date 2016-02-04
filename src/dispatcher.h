@@ -37,7 +37,7 @@ namespace ucorf
 
     private:
         std::vector<boost::shared_ptr<ITransportClient>> tp_list_;
-        std::atomic<std::size_t> robin_idx_{0};
+        std::size_t robin_idx_{0};
         co_rwmutex mutex_;
     };
 
