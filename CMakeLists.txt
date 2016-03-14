@@ -11,9 +11,10 @@ message("CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 
 set(CMAKE_CXX_FLAGS "-std=c++11 -Wall -Werror")
 
-include_directories("${PROJECT_SOURCE_DIR}/third_party/cpp_features")
-include_directories("${PROJECT_SOURCE_DIR}/third_party/cpp_features/coroutine")
-include_directories("${PROJECT_SOURCE_DIR}/third_party/cpp_features/coroutine/linux")
+include_directories("${PROJECT_SOURCE_DIR}/third_party/libgonet")
+include_directories("${PROJECT_SOURCE_DIR}/third_party/libgonet/third_party/libgo")
+include_directories("${PROJECT_SOURCE_DIR}/third_party/libgonet/third_party/libgo/libgo")
+include_directories("${PROJECT_SOURCE_DIR}/third_party/libgonet/third_party/libgo/libgo/linux")
 
 aux_source_directory(${PROJECT_SOURCE_DIR}/src SRC_LIST)
 add_library(ucorf ${SRC_LIST})
