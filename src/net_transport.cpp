@@ -19,14 +19,14 @@ namespace ucorf
     }
     void NetTransportServer::SetReceiveCb(OnReceiveF const& cb)
     {
-        s_.SetReceiveCb([=](::network::SessionId sess, const char* data, size_t bytes)
+        s_.SetReceiveCb([=](::network::SessionEntry sess, const char* data, size_t bytes)
                 {
                     return cb(boost::any(sess), data, bytes);
                 });
     }
     void NetTransportServer::SetConnectedCb(OnConnectedF const& cb)
     {
-        s_.SetConnectedCb([=](::network::SessionId sess)
+        s_.SetConnectedCb([=](::network::SessionEntry sess)
                 {
                     ucorf_log_debug("new connection");
                     cb(boost::any(sess));
@@ -34,7 +34,7 @@ namespace ucorf
     }
     void NetTransportServer::SetDisconnectedCb(OnDisconnectedF const& cb)
     {
-        s_.SetDisconnectedCb([=](::network::SessionId sess, ::network::boost_ec const& ec)
+        s_.SetDisconnectedCb([=](::network::SessionEntry sess, ::network::boost_ec const& ec)
                 {
                     ucorf_log_debug("connection disconnect: %s", ec.message().c_str());
                     cb(boost::any(sess), ec);
@@ -60,8 +60,8 @@ namespace ucorf
     }
     void NetTransportServer::Send(SessId id, const void* data, size_t bytes, OnSndF const& cb)
     {
-        ::network::SessionId &sess = ::boost::any_cast<::network::SessionId&>(id);
-        s_.GetProtocol()->Send(sess, data, bytes, cb);
+        ::network::SessionEntry &sess = ::boost::any_cast<::network::SessionEntry&>(id);
+        sess->Send(data, bytes, cb);
     }
     std::string NetTransportServer::LocalUrl() const
     {
@@ -84,14 +84,14 @@ namespace ucorf
     }
     void NetTransportClient::SetReceiveCb(OnReceiveF const& cb)
     {
-        c_.SetReceiveCb([=](::network::SessionId sess, const char* data, size_t bytes)
+        c_.SetReceiveCb([=](::network::SessionEntry sess, const char* data, size_t bytes)
                 {
                     return cb(boost::any(sess), data, bytes);
                 });
     }
     void NetTransportClient::SetConnectedCb(OnConnectedF const& cb)
     {
-        c_.SetConnectedCb([=](::network::SessionId sess)
+        c_.SetConnectedCb([=](::network::SessionEntry sess)
                 {
                     ucorf_log_debug("connect sucess");
                     cb(boost::any(sess));
@@ -99,7 +99,7 @@ namespace ucorf
     }
     void NetTransportClient::SetDisconnectedCb(OnDisconnectedF const& cb)
     {
-        c_.SetDisconnectedCb([=](::network::SessionId sess, ::network::boost_ec const& ec)
+        c_.SetDisconnectedCb([=](::network::SessionEntry sess, ::network::boost_ec const& ec)
                 {
                     ucorf_log_debug("disconnect because: %s", ec.message().c_str());
                     cb(boost::any(sess), ec);
@@ -128,9 +128,7 @@ namespace ucorf
     }
     bool NetTransportClient::IsEstab()
     {
-        auto proto = c_.GetProtocol();
-        if (!proto) return false;
-        return c_.GetProtocol()->IsEstab(c_.GetSessId());
+        return c_.IsEstab();
     }
     std::string NetTransportClient::RemoteUrl() const
     {
