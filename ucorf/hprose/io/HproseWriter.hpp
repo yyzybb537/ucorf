@@ -61,9 +61,6 @@ public:
 
 public:
     template <typename T>
-    void Write(T t);
-
-    template <typename T>
     typename std::enable_if<std::is_integral<T>::value>::type Write(T t)
     {
         WriteInteger(t);

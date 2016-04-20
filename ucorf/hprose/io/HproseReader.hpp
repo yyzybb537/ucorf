@@ -54,9 +54,9 @@ public:
 
 public:
     template <typename T>
-    typename std::enable_if<std::is_integral<T>::value>::type Read()
+    typename std::enable_if<std::is_integral<T>::value, T>::type Read()
     {
-        return ReadInt();
+        return ReadInt<T>();
     }
 
     template <typename T>

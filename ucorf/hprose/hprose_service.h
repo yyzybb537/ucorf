@@ -110,7 +110,7 @@ namespace ucorf
             hprose::HproseWriter writer(ss);
             ss << hprose::HproseTags::TagCall;
             writer.WriteString(method);
-            RecursiveWrite(writer, std::forward(args)...);
+            RecursiveWrite(writer, std::forward<Args>(args)...);
             ss << hprose::HproseTags::TagEnd;
             Hprose_Message request(ss.str());
             Hprose_Message response;
@@ -127,16 +127,20 @@ namespace ucorf
         R CallMethodNE(std::string const& method, Args && ... args)
         {
             boost_ec ec;
-            return CallMethod(method, ec, std::forward(args)...);
+            return CallMethod(method, ec, std::forward<Args>(args)...);
+        }
+
+        template <typename A, typename ... Args>
+        void RecursiveWrite(hprose::HproseWriter & writer, A && a)
+        {
+            writer.Write(a);
         }
 
         template <typename A, typename ... Args>
         void RecursiveWrite(hprose::HproseWriter & writer, A && a, Args && ... args)
         {
-            writer.Write(a);
-            if (sizeof...(Args)) {
-                RecursiveWrite(writer, std::forward(args)...);
-            }
+            writer.Write(std::forward<A>(a));
+            RecursiveWrite(writer, std::forward<Args>(args)...);
         }
     };
 
