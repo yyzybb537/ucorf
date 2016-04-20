@@ -35,11 +35,11 @@ namespace ucorf
     {
         return body_length;
     }
-    std::string const& UcorfHead::GetService()
+    std::string UcorfHead::GetService()
     {
         return service;
     }
-    std::string const& UcorfHead::GetMethod()
+    std::string UcorfHead::GetMethod()
     {
         return method;
     }

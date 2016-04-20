@@ -25,8 +25,8 @@ namespace ucorf
         virtual std::size_t GetId() = 0;
         virtual eHeaderType GetType() = 0;
         virtual std::size_t GetFollowBytes() = 0;
-        virtual std::string const& GetService() = 0;
-        virtual std::string const& GetMethod() = 0;
+        virtual std::string GetService() = 0;
+        virtual std::string GetMethod() = 0;
 
         virtual bool Serialize(void* buf, std::size_t len) = 0;
         virtual std::size_t ByteSize() = 0;
@@ -57,8 +57,8 @@ namespace ucorf
         virtual std::size_t GetId();
         virtual eHeaderType GetType();
         virtual std::size_t GetFollowBytes();
-        virtual std::string const& GetService();
-        virtual std::string const& GetMethod();
+        virtual std::string GetService();
+        virtual std::string GetMethod();
 
         virtual bool Serialize(void* buf, std::size_t len);
         virtual std::size_t ByteSize();

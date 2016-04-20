@@ -11,12 +11,17 @@ message("CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 
 set(CMAKE_CXX_FLAGS "-std=c++11 -Wall -Werror")
 
+include_directories("${PROJECT_SOURCE_DIR}/src")
+include_directories("${PROJECT_SOURCE_DIR}/src/hprose")
 include_directories("${PROJECT_SOURCE_DIR}/third_party/libgonet")
 include_directories("${PROJECT_SOURCE_DIR}/third_party/libgonet/third_party/libgo")
 include_directories("${PROJECT_SOURCE_DIR}/third_party/libgonet/third_party/libgo/libgo")
 include_directories("${PROJECT_SOURCE_DIR}/third_party/libgonet/third_party/libgo/libgo/linux")
 
 aux_source_directory(${PROJECT_SOURCE_DIR}/src SRC_LIST)
+aux_source_directory(${PROJECT_SOURCE_DIR}/src/hprose SRC_LIST)
+aux_source_directory(${PROJECT_SOURCE_DIR}/src/hprose/io SRC_LIST)
+aux_source_directory(${PROJECT_SOURCE_DIR}/src/hprose/common SRC_LIST)
 add_library(ucorf ${SRC_LIST})
 
 set(CMAKE_INSTALL_PREFIX "/usr/local")
