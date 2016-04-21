@@ -256,7 +256,7 @@ struct Buffer
 
         int follow_bytes = 0;
         for (; follow_bytes <= 6; ++follow_bytes)
-            if ((leader & (1 << follow_bytes)) == 0)
+            if ((leader & (1 << (7 - follow_bytes))) == 0)
                 break;
 
         std::string r;
@@ -367,7 +367,7 @@ struct Buffer
             return true;
         }
 
-        if (v != TagString) return false;
+        if (v != TagString && v != TagBytes) return false;
 
         std::string len_s = ReadUntil(TagQuote);
         if (len_s.empty()) {
@@ -451,7 +451,8 @@ struct Buffer
     // std::vector & std::list & std::array & std::deque & std::set
     // @remarks: use container by iterator.
     template <typename Container>
-    typename std::enable_if<!has_mapped_type<Container>::value, bool>::type
+    typename std::enable_if<!has_mapped_type<Container>::value && !std::is_integral<Container>::value,
+             bool>::type
     Read(Container & container)
     {
         rb_sentry rb(this);
@@ -461,7 +462,8 @@ struct Buffer
     }
 
     template <typename Container>
-    typename std::enable_if<!has_mapped_type<Container>::value, bool>::type
+    typename std::enable_if<!has_mapped_type<Container>::value && !std::is_integral<Container>::value,
+             bool>::type
     __Read(Container & container)
     {
         if (get() != TagList) return false;
@@ -490,10 +492,161 @@ struct Buffer
         return false;
     }
 
-    template <typename T>
-    void Write(T const& t)
+    ///////////////////////////////////////////////////////////////
+    // integer and long
+    void __Write(std::string const& s)
+    {
+        s_ += s;
+    }
+
+    void __Write(char c)
+    {
+        s_ += c;
+    }
+
+    void Write(char c)
+    {
+        s_ += c;
+    }
+
+    template <typename Integer>
+    typename std::enable_if<std::is_integral<Integer>::value && !std::is_same<Integer, bool>::value>::type
+    Write(Integer i)
+    {
+        if (i >= 0 && i <= 9) {
+            Write((char)(i + '0'));
+            return ;
+        }
+
+        __Write(sizeof(Integer) <= 4 ? TagInteger : TagLong);
+        __Write(std::to_string(i));
+        __Write(TagSemicolon);
+    }
+
+    // double (float)
+    template <typename Double>
+    typename std::enable_if<std::is_floating_point<Double>::value>::type
+    Write(Double f)
+    {
+        typedef typename std::conditional<sizeof(Double) == 4, int32_t, int64_t>::type CInteger;
+        static const Double nan = std::numeric_limits<Double>::signaling_NaN();
+        if (*(CInteger*)&f == *(CInteger*)&nan) {
+            __Write(TagNaN);
+            return ;
+        }
+
+        static const Double inf = std::numeric_limits<Double>::infinity();
+        if (*(CInteger*)&f == *(CInteger*)&inf) {
+            __Write(TagInfinity);
+            __Write(TagPos);
+            return ;
+        }
+
+        static const Double negative_inf = std::numeric_limits<Double>::infinity();
+        if (*(CInteger*)&f == *(CInteger*)&negative_inf) {
+            __Write(TagInfinity);
+            __Write(TagNeg);
+            return ;
+        }
+
+        __Write(TagDouble);
+        __Write(std::to_string(f));
+        __Write(TagSemicolon);
+    }
+
+    // bool
+    void Write(bool b)
+    {
+        __Write(b ? TagTrue : TagFalse);
+    }
+
+    // utf-8 char
+    void WriteUTF8(std::string const& c)
+    {
+        __Write(TagUTF8Char);
+        __Write(c);
+    }
+
+    // Null
+    void Write(nullptr_t null)
+    {
+        __Write(TagNull);
+    }
+
+    // DateTime
+    // @returns: local time.
+    void Write(time_t t, long long nano)
+    {
+        // TODO
+    }
+
+    // Bytes & String
+    int utf8_char_count(std::string const& str)
+    {
+        int chars = 0;
+        for (size_t i = 0; i < str.length(); ++i, ++chars)
+        {
+            char leader = str[i];
+            int follow_bytes = 0;
+            for (; follow_bytes <= 6; ++follow_bytes)
+                if ((leader & (1 << (7 - follow_bytes))) == 0)
+                    break;
+            i += follow_bytes;
+        }
+        return chars;
+    }
+    void Write(std::string const& str, bool utf8 = false)
+    {
+        if (str.empty()) {
+            __Write(TagEmpty);
+            return ;
+        }
+
+        __Write(utf8 ? TagString : TagBytes);
+        int len = utf8 ? utf8_char_count(str) : str.length();
+        __Write(std::to_string(len));
+        __Write(TagQuote);
+        __Write(str);
+        __Write(TagQuote);
+    }
+    void Write(const char* sstr, bool utf8 = false)
+    {
+        Write(std::string(sstr), utf8);
+    }
+
+    void Write(boost::uuids::uuid const& uuid)
     {
     }
+
+    // std::map & std::unordered_map
+    // @remarks: use container by iterator.
+    template <typename Container>
+    typename std::enable_if<has_mapped_type<Container>::value>::type
+    Write(Container const& container)
+    {
+        // TODO
+    }
+
+    // std::vector & std::list & std::array & std::deque & std::set
+    // @remarks: use container by iterator.
+    template <typename Container>
+    typename std::enable_if<!has_mapped_type<Container>::value && !std::is_integral<Container>::value>::type
+    Write(Container const& container)
+    {
+        __Write(TagList);
+        if (container.size() == 0) {
+            __Write(TagOpenbrace);
+            __Write(TagClosebrace);
+            return ;
+        }
+
+        __Write(std::to_string(container.size()));
+        __Write(TagOpenbrace);
+        for (auto &elem : container)
+            Write(elem);
+        __Write(TagClosebrace);
+    }
+
 };
 
 } // namespace hprose

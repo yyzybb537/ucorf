@@ -34,6 +34,11 @@ namespace hprose {
             buf.Write(hprose::TagEnd);
             return buf.str();
         }
+
+        std::string error_arguments()
+        {
+            return "Es10\"Error Args\"z";
+        }
     };
 
     template <typename F>
@@ -68,7 +73,7 @@ namespace hprose {
                 return R2Hprose(result);
             }
 
-            return "Es10\"Error Args\"z";
+            return error_arguments();
         }
 
         func_t fn_;
@@ -89,7 +94,29 @@ namespace hprose {
                 return R2Hprose(result);
             }
 
-            return "Es10\"Error Args\"z";
+            return error_arguments();
+        }
+
+        func_t fn_;
+    };
+
+    template <typename R, typename Arg1, typename Arg2, typename Arg3>
+    struct Callee<R(Arg1, Arg2, Arg3)> : public CalleeBase
+    {
+        typedef boost::function<R(Arg1, Arg2, Arg3)> func_t;
+        explicit Callee(func_t const& fn) : fn_(fn) {}
+
+        virtual std::string Call(Buffer & reader) override
+        {
+            Arg1 arg1;
+            Arg2 arg2;
+            Arg3 arg3;
+            if (reader.Read(arg1) && reader.Read(arg2) && reader.Read(arg3)) {
+                R result = fn_(arg1, arg2, arg3);
+                return R2Hprose(result);
+            }
+
+            return error_arguments();
         }
 
         func_t fn_;
@@ -133,7 +160,7 @@ namespace hprose {
         {
             Buffer buf;
             buf.Write(hprose::TagCall);
-            buf.Write(method);
+            buf.Write(method, true);
             RecursiveWrite(buf, std::forward<Args>(args)...);
             buf.Write(hprose::TagEnd);
 

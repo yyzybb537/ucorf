@@ -12,6 +12,7 @@ using std::endl;
 int main(int argc, char **argv)
 {
     using namespace ucorf;
+    using namespace ucorf::hprose;
 
     const char* url = "tcp://127.0.0.1:48080";
     if (argc > 1)

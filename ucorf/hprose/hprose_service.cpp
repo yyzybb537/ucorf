@@ -17,7 +17,7 @@ std::unique_ptr<IMessage> Hprose_Service::CallMethod(std::string const&,
 
     if (flag == hprose::TagCall) {
         std::string method;
-        if (!reader.Read(method))
+        if (!reader.Read(method, true))
             return std::unique_ptr<IMessage>(new Hprose_Message("Es10\"Error Args\"z"));
         return std::unique_ptr<IMessage>(new Hprose_Message(Call(method, reader)));
     }

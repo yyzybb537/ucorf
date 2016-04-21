@@ -144,6 +144,7 @@ namespace ucorf
         // reply
         if (sess.header->GetType() != eHeaderType::oneway_request) {
             sess.header->SetType(eHeaderType::response);
+            sess.header->SetFollowBytes(response->ByteSize());
             std::vector<char> buf;
             buf.resize(sess.header->ByteSize() + response->ByteSize());
             sess.header->Serialize(&buf[0], sess.header->ByteSize());
