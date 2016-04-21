@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <limits>
 #include <time.h>
-#include <chorno>
+#include <chrono>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/string_generator.hpp>
 
@@ -84,8 +84,14 @@ struct Buffer
         }
     };
 
+    Buffer() {}
     explicit Buffer(std::string const& s) : s_(s) {}
-    Buffer(const void* b, size_t len) : s_(b, len) {}
+    Buffer(const void* b, size_t len) : s_((const char*)b, len) {}
+
+    std::string const& str()
+    {
+        return s_;
+    }
 
     int get()
     {
@@ -129,7 +135,7 @@ struct Buffer
 
     // integer and long
     template <typename Integer>
-    typename std::enable_if<std::is_integeral<Integer>::value && !std::is_same<Integer, bool>::value,
+    typename std::enable_if<std::is_integral<Integer>::value && !std::is_same<Integer, bool>::value,
              bool>::type
     Read(Integer & i)
     {
@@ -140,7 +146,7 @@ struct Buffer
     }
 
     template <typename Integer>
-    typename std::enable_if<std::is_integeral<Integer>::value && !std::is_same<Integer, bool>::value,
+    typename std::enable_if<std::is_integral<Integer>::value && !std::is_same<Integer, bool>::value,
              bool>::type
     __Read(Integer & i)
     {
@@ -278,8 +284,6 @@ struct Buffer
         return (get() == TagNull);
     }
 
-    // TODO: Empty. handle it on string & bytes.
-
     // DateTime
     // @returns: local time.
     bool Read(time_t &t, long long &nano)
@@ -390,7 +394,7 @@ struct Buffer
             }
         } else {
             std::string bin = ReadN(len);
-            if (bin.length() != len) return false;
+            if (bin.length() != (size_t)len) return false;
             result.swap(bin);
         }
 
@@ -431,7 +435,17 @@ struct Buffer
     typename std::enable_if<has_mapped_type<Container>::value, bool>::type
     Read(Container & container)
     {
-
+        rb_sentry rb(this);
+        bool r = __Read(container);
+        if (r) rb.commit();
+        return r;
+    }
+    template <typename Container>
+    typename std::enable_if<has_mapped_type<Container>::value, bool>::type
+    __Read(Container & container)
+    {
+//        static_assert(false, "No support map.");
+        return false;
     }
 
     // std::vector & std::list & std::array & std::deque & std::set
@@ -440,7 +454,45 @@ struct Buffer
     typename std::enable_if<!has_mapped_type<Container>::value, bool>::type
     Read(Container & container)
     {
+        rb_sentry rb(this);
+        bool r = __Read(container);
+        if (r) rb.commit();
+        return r;
+    }
 
+    template <typename Container>
+    typename std::enable_if<!has_mapped_type<Container>::value, bool>::type
+    __Read(Container & container)
+    {
+        if (get() != TagList) return false;
+        std::string len_s = ReadUntil(TagOpenbrace);
+        if (len_s.empty()) {
+            if (get() == TagClosebrace) {
+                container.clear();
+                return true;
+            }
+
+            return false;
+        }
+
+        int len = atoi(len_s.c_str());
+        Container c;
+        c.resize(len);
+        for (auto & elem : c)
+            if (!this->Read(elem))
+                return false;
+
+        if (get() == TagClosebrace) {
+            container.swap(c);
+            return true;
+        }
+
+        return false;
+    }
+
+    template <typename T>
+    void Write(T const& t)
+    {
     }
 };
 

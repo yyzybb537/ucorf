@@ -2,50 +2,47 @@
 #include <sstream>
 
 namespace ucorf {
+namespace hprose {
 
 std::unique_ptr<IMessage> Hprose_Service::CallMethod(std::string const&,
         const char *request_data, size_t request_bytes)
 {
-    std::stringstream ss;
-    ss.rdbuf()->sputn(request_data, request_bytes);
-    hprose::HproseReader reader(ss);
+    Buffer reader(request_data, request_bytes);
 
-    char flag = ss.get();
-    if (flag == hprose::HproseTags::TagEnd) {
+    char flag = reader.get();
+    if (flag == hprose::TagEnd) {
         // return function list.
         return std::unique_ptr<IMessage>(new Hprose_Message(GetFunctionList()));
     }
 
-    if (flag == hprose::HproseTags::TagCall) {
-        std::string method = reader.ReadString();
+    if (flag == hprose::TagCall) {
+        std::string method;
+        if (!reader.Read(method))
+            return std::unique_ptr<IMessage>(new Hprose_Message("Es10\"Error Args\"z"));
         return std::unique_ptr<IMessage>(new Hprose_Message(Call(method, reader)));
     }
 
-    std::stringstream ws;
-    hprose::HproseWriter writer(ws);
-    ws << hprose::HproseTags::TagError;
-    writer.WriteString("No support protocol tag.");
-    ws << hprose::HproseTags::TagEnd;
-    return std::unique_ptr<IMessage>(new Hprose_Message(ws.str()));
+    Buffer writer;
+    writer.Write(hprose::TagError);
+    writer.Write("No support protocol tag.");
+    writer.Write(hprose::TagEnd);
+    return std::unique_ptr<IMessage>(new Hprose_Message(writer.str()));
 }
 
 std::string Hprose_Service::GetFunctionList()
 {
-    std::stringstream ss;
-    hprose::HproseWriter writer(ss);
-
-    ss << hprose::HproseTags::TagFunctions;
+    Buffer writer;
+    writer.Write(hprose::TagFunctions);
     std::vector<std::string> funcs;
     funcs.reserve(functions_.size());
     for (auto &kv : functions_)
         funcs.push_back(kv.first);
-    writer.WriteList(funcs);
-    ss << hprose::HproseTags::TagEnd;
-    return ss.str();
+    writer.Write(funcs);
+    writer.Write(hprose::TagEnd);
+    return writer.str();
 }
 
-std::string Hprose_Service::Call(std::string const& method,
-        hprose::HproseReader & reader)
+std::string Hprose_Service::Call(std::string const& method, Buffer & reader)
 {
     boost::shared_ptr<CalleeBase> sptr;
 
@@ -61,15 +58,15 @@ std::string Hprose_Service::Call(std::string const& method,
 
     if (!sptr) {
         // no callee, returns error.
-        std::stringstream ss;
-        hprose::HproseWriter writer(ss);
-        ss << hprose::HproseTags::TagError;
-        writer.WriteString(std::string("No Callee ") + method);
-        ss << hprose::HproseTags::TagEnd;
-        return ss.str();
+        Buffer writer;
+        writer.Write(hprose::TagError);
+        writer.Write(std::string("No Callee ") + method);
+        writer.Write(hprose::TagEnd);
+        return writer.str();
     }
 
     return sptr->Call(reader);
 }
 
+} //namespace hprose
 } //namespace ucorf

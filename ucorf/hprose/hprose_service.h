@@ -6,39 +6,53 @@
 #include "client.h"
 #include "error.h"
 #include "logger.h"
-#include "io.hpp"
+#include "hprose_protocol.h"
 
-namespace ucorf
-{
+namespace ucorf {
+namespace hprose {
+
     struct CalleeBase
     {
         virtual ~CalleeBase() {}
-        virtual std::string Call(hprose::HproseReader & reader) = 0;
+        virtual std::string Call(Buffer & reader) = 0;
 
         std::string R2Hprose(void)
         {
-            std::stringstream ss;
-            hprose::HproseWriter writer(ss);
-            ss << hprose::HproseTags::TagResult;
-            writer.WriteEmpty();
-            ss << hprose::HproseTags::TagEnd;
-            return ss.str();
+            Buffer buf;
+            buf.Write(hprose::TagResult);
+            buf.Write(hprose::TagEmpty);
+            buf.Write(hprose::TagEnd);
+            return buf.str();
         }
 
         template <typename R>
         std::string R2Hprose(R const& r)
         {
-            std::stringstream ss;
-            hprose::HproseWriter writer(ss);
-            ss << hprose::HproseTags::TagResult;
-            writer.Write(r);
-            ss << hprose::HproseTags::TagEnd;
-            return ss.str();
+            Buffer buf;
+            buf.Write(hprose::TagResult);
+            buf.Write(r);
+            buf.Write(hprose::TagEnd);
+            return buf.str();
         }
     };
 
     template <typename F>
     struct Callee;
+
+    template <typename R>
+    struct Callee<R()> : public CalleeBase
+    {
+        typedef boost::function<R()> func_t;
+        explicit Callee(func_t const& fn) : fn_(fn) {}
+
+        virtual std::string Call(Buffer & reader) override
+        {
+            R result = fn_();
+            return R2Hprose(result);
+        }
+
+        func_t fn_;
+    };
 
     template <typename R, typename Arg>
     struct Callee<R(Arg)> : public CalleeBase
@@ -46,11 +60,15 @@ namespace ucorf
         typedef boost::function<R(Arg)> func_t;
         explicit Callee(func_t const& fn) : fn_(fn) {}
 
-        virtual std::string Call(hprose::HproseReader & reader) override
+        virtual std::string Call(Buffer & reader) override
         {
-            Arg arg = reader.Read<Arg>();
-            R result = fn_(arg);
-            return R2Hprose(result);
+            Arg arg;
+            if (reader.Read(arg)) {
+                R result = fn_(arg);
+                return R2Hprose(result);
+            }
+
+            return "Es10\"Error Args\"z";
         }
 
         func_t fn_;
@@ -62,12 +80,16 @@ namespace ucorf
         typedef boost::function<R(Arg1, Arg2)> func_t;
         explicit Callee(func_t const& fn) : fn_(fn) {}
 
-        virtual std::string Call(hprose::HproseReader & reader) override
+        virtual std::string Call(Buffer & reader) override
         {
-            Arg1 arg1 = reader.Read<Arg1>();
-            Arg2 arg2 = reader.Read<Arg2>();
-            R result = fn_(arg1, arg2);
-            return R2Hprose(result);
+            Arg1 arg1;
+            Arg2 arg2;
+            if (reader.Read(arg1) && reader.Read(arg2)) {
+                R result = fn_(arg1, arg2);
+                return R2Hprose(result);
+            }
+
+            return "Es10\"Error Args\"z";
         }
 
         func_t fn_;
@@ -93,7 +115,7 @@ namespace ucorf
     private:
         std::string GetFunctionList();
 
-        std::string Call(std::string const& method, hprose::HproseReader & reader);
+        std::string Call(std::string const& method, Buffer & reader);
 
         co_mutex func_mutex_;
         std::map<std::string, boost::shared_ptr<CalleeBase>> functions_;
@@ -109,25 +131,30 @@ namespace ucorf
         template <typename R, typename ... Args>
         R CallMethod(std::string const& method, boost_ec & ec, Args && ... args)
         {
-            std::ostringstream ss;
-            hprose::HproseWriter writer(ss);
-            ss << hprose::HproseTags::TagCall;
-            writer.WriteString(method);
-            RecursiveWrite(writer, std::forward<Args>(args)...);
-            ss << hprose::HproseTags::TagEnd;
-            Hprose_Message request(ss.str());
+            Buffer buf;
+            buf.Write(hprose::TagCall);
+            buf.Write(method);
+            RecursiveWrite(buf, std::forward<Args>(args)...);
+            buf.Write(hprose::TagEnd);
+
+            Hprose_Message request(buf.str());
             Hprose_Message response;
             ec = c_->Call("", "", &request, &response);
             if (ec) return R();
 
-            std::istringstream rs(response.body_);
-            hprose::HproseReader reader(rs);
-            char flag = rs.get();
-            if (flag == hprose::HproseTags::TagResult)
-                return reader.Read<R>();
+            Buffer reader(response.body_);
+            char flag = reader.get();
+            if (flag == hprose::TagResult) {
+                R r;
+                if (reader.Read(r))
+                    return r;
+                return R();
+            }
 
-            if (flag == hprose::HproseTags::TagError) {
-                std::string err = reader.ReadString();
+            if (flag == hprose::TagError) {
+                std::string err;
+                if (!reader.Read(err))
+                    err = "Parse Response Error";
                 ucorf_log_error("returns error:%s", err.c_str());
                 ec = MakeUcorfErrorCode(eUcorfErrorCode::ec_logic_error);
                 return R();
@@ -146,17 +173,18 @@ namespace ucorf
         }
 
         template <typename A, typename ... Args>
-        void RecursiveWrite(hprose::HproseWriter & writer, A && a)
+        void RecursiveWrite(Buffer & buf, A && a)
         {
-            writer.Write(a);
+            buf.Write(a);
         }
 
         template <typename A, typename ... Args>
-        void RecursiveWrite(hprose::HproseWriter & writer, A && a, Args && ... args)
+        void RecursiveWrite(Buffer & buf, A && a, Args && ... args)
         {
-            writer.Write(std::forward<A>(a));
-            RecursiveWrite(writer, std::forward<Args>(args)...);
+            buf.Write(std::forward<A>(a));
+            RecursiveWrite(buf, std::forward<Args>(args)...);
         }
     };
 
+} //namespace hprose
 } //namespace ucorf
