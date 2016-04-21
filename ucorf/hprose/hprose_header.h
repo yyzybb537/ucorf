@@ -17,7 +17,7 @@ namespace ucorf
         virtual std::size_t GetId();
         virtual eHeaderType GetType();
         virtual std::size_t GetFollowBytes();
-        virtual std::string GetService() { return ""; }
+        virtual std::string GetService();
         virtual std::string GetMethod() { return ""; }
 
         virtual bool Serialize(void* buf, std::size_t len);

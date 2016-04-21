@@ -52,7 +52,7 @@ std::string Hprose_Service::Call(std::string const& method,
     {
         std::unique_lock<co_mutex> lock(func_mutex_);
         auto it = functions_.find(method);
-        if (functions_.end() != it)
+        if (functions_.end() == it)
             it = functions_.find("*");
 
         if (functions_.end() != it)
@@ -64,7 +64,7 @@ std::string Hprose_Service::Call(std::string const& method,
         std::stringstream ss;
         hprose::HproseWriter writer(ss);
         ss << hprose::HproseTags::TagError;
-        writer.WriteString("No Callee");
+        writer.WriteString(std::string("No Callee ") + method);
         ss << hprose::HproseTags::TagEnd;
         return ss.str();
     }

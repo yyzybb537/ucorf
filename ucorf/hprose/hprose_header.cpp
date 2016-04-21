@@ -22,6 +22,10 @@ std::size_t Hprose_Head::GetFollowBytes()
 {
     return body_length;
 }
+std::string Hprose_Head::GetService()
+{
+    return "hprose";
+}
 bool Hprose_Head::Serialize(void * buf, std::size_t len)
 {
     if (len < 8) return false;
@@ -31,7 +35,7 @@ bool Hprose_Head::Serialize(void * buf, std::size_t len)
 }
 std::size_t Hprose_Head::Parse(const void* buf, std::size_t len)
 {
-    if (len < 8) return false;
+    if (len < 8) return 0;
     body_length = htonl(*(uint32_t*)((char*)buf));
     callid = htonl(*(uint32_t*)((char*)buf + 4));
     return 8;

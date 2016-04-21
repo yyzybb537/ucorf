@@ -24,6 +24,7 @@ int main(int argc, char **argv)
     hp_srv->RegisterFunction("add", boost::function<int(int)>(&add));
     boost::shared_ptr<IService> srv(hp_srv);
     Server server;
+    server.SetHeaderFactory(&Hprose_Head::Factory);
     server.RegisterService(srv);
     boost_ec ec = server.Listen(url);
     if (ec) {

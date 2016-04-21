@@ -18,6 +18,7 @@ namespace ucorf
         ec_no_estab     = 5,
         ec_unsupport_protocol   = 6,
         ec_req_wnd_full = 7,
+        ec_logic_error  = 8,
     };
 
     class ucorf_error_category

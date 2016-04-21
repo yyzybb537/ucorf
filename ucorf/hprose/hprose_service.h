@@ -2,7 +2,10 @@
 
 #include "service.h"
 #include "hprose_message.h"
+#include "hprose_header.h"
 #include "client.h"
+#include "error.h"
+#include "logger.h"
 #include "io.hpp"
 
 namespace ucorf
@@ -73,7 +76,7 @@ namespace ucorf
     class Hprose_Service : public IService
     {
     public:
-        std::string name() override { return "hprose service"; }
+        std::string name() override { return "hprose"; }
 
         template <typename R, typename ... Args>
         bool RegisterFunction(std::string const& method, boost::function<R(Args)...> const& fn)
@@ -101,12 +104,12 @@ namespace ucorf
     public:
         using IServiceStub::IServiceStub;
 
-        std::string name() override { return "hprose service stub"; }
+        std::string name() override { return "hprose"; }
 
         template <typename R, typename ... Args>
         R CallMethod(std::string const& method, boost_ec & ec, Args && ... args)
         {
-            std::stringstream ss;
+            std::ostringstream ss;
             hprose::HproseWriter writer(ss);
             ss << hprose::HproseTags::TagCall;
             writer.WriteString(method);
@@ -117,10 +120,22 @@ namespace ucorf
             ec = c_->Call("", "", &request, &response);
             if (ec) return R();
 
-            std::stringstream rs;
-            rs.rdbuf()->sputn(response.body_.data(), response.body_.size());
+            std::istringstream rs(response.body_);
             hprose::HproseReader reader(rs);
-            return reader.Read<R>();
+            char flag = rs.get();
+            if (flag == hprose::HproseTags::TagResult)
+                return reader.Read<R>();
+
+            if (flag == hprose::HproseTags::TagError) {
+                std::string err = reader.ReadString();
+                ucorf_log_error("returns error:%s", err.c_str());
+                ec = MakeUcorfErrorCode(eUcorfErrorCode::ec_logic_error);
+                return R();
+            }
+
+            ucorf_log_error("request type error: 0x%x", (int)flag);
+            ec = MakeUcorfErrorCode(eUcorfErrorCode::ec_call_error);
+            return R();
         }
 
         template <typename R, typename ... Args>

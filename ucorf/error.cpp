@@ -34,6 +34,9 @@ std::string ucorf_error_category::message(int v) const
 
         case (int)eUcorfErrorCode::ec_req_wnd_full:
             return "request window was full";
+
+        case (int)eUcorfErrorCode::ec_logic_error:
+            return "logic error";
     }
 
     return "";
