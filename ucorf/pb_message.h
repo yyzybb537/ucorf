@@ -9,6 +9,9 @@ namespace ucorf
 {
     class Pb_Message : public IMessage
     {
+        Pb_Message(Pb_Message const&) = delete;
+        Pb_Message& operator=(Pb_Message const&) = delete;
+
     public:
         Pb_Message() = default;
         Pb_Message(::google::protobuf::Message* msg, bool own = true);
