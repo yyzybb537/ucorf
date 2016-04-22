@@ -10,6 +10,7 @@ endif()
 message("CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 
 set(CMAKE_CXX_FLAGS "-std=c++11 -Wall -Werror")
+set(CMAKE_CXX_FLAGS_PROFILE "-g -pg -O3 ${CMAKE_CXX_FLAGS}")
 
 include_directories("${PROJECT_SOURCE_DIR}/ucorf")
 include_directories("${PROJECT_SOURCE_DIR}/ucorf/hprose")

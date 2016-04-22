@@ -15,7 +15,8 @@ link_directories("${PROJECT_SOURCE_DIR}/../build")
 link_directories("${PROJECT_SOURCE_DIR}/../build/third_party/libgonet")
 link_directories("${PROJECT_SOURCE_DIR}/../build/third_party/libgonet/third_party/libgo")
 
-set(CMAKE_CXX_FLAGS "-std=c++11 -g")
+set(CMAKE_CXX_FLAGS "-std=c++11")
+set(CMAKE_CXX_FLAGS_PROFILE "-g -pg -O3 ${CMAKE_CXX_FLAGS}")
 set(LINK_ARGS "-lucorf -llibgonet -llibgo -lprotobuf -lboost_thread -lboost_system -lboost_coroutine -lboost_context -lboost_regex -lboost_thread -lzookeeper_mt -ldl -lpthread -static -static-libgcc -static-libstdc++")
 
 aux_source_directory("${PROJECT_SOURCE_DIR}" SRC_LIST)

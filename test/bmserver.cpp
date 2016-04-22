@@ -37,7 +37,7 @@ int main(int argc, char **argv)
         return 0;
     }
 
-    int thread_c = 4;
+    int thread_c = 1;
     if (argc > 1)
         thread_c = atoi(argv[1]);
 

@@ -103,7 +103,7 @@ int main(int argc, char** argv)
 
             for (;;) {
                 auto now = std::chrono::system_clock::now();
-                boost_ec ec = stub.Echo(request, &response);
+                boost_ec ec = stub.Echo(request, (EchoResponse*)nullptr);
 //                boost_ec ec = stub.Echo(request, (EchoResponse*)nullptr);
                 if (ec) {
                     co_sleep(1);
@@ -128,10 +128,10 @@ int main(int argc, char** argv)
         }
     };
 
-//    go []{
-//        co_sleep(10000);
-//        exit(0);
-//    };
+    go []{
+        co_sleep(10000);
+        exit(0);
+    };
 
     if (thread_c > 1) {
         boost::thread_group tg;

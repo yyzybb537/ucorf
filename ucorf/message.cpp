@@ -48,7 +48,7 @@ namespace ucorf
     {
         if (len < ByteSize()) return false;
         *(unsigned char*)buf = magic_code;
-        *(uint8_t*)((char*)buf + 1) = htonl(calltype);
+        *(uint8_t*)((char*)buf + 1) = calltype;
         *(uint32_t*)((char*)buf + 2) = htonl(callid);
         *(uint32_t*)((char*)buf + 6) = htonl(body_length);
         *(uint16_t*)((char*)buf + 10) = htons(service.size());
