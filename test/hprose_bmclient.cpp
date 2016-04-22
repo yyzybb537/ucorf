@@ -12,7 +12,7 @@ using std::endl;
 using namespace ucorf;
 using namespace ucorf::hprose;
 
-static int concurrecy = 100;
+static int concurrecy = 256;
 static int thread_c = 1;
 static int connection_c = 1;
 static std::atomic<size_t> g_count{0};
