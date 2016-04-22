@@ -131,7 +131,7 @@ namespace ucorf
         return consume;
     }
 
-    bool ServerImpl::DispatchMsg(Session sess, const char* data, size_t bytes)
+    bool ServerImpl::DispatchMsg(Session & sess, const char* data, size_t bytes)
     {
         std::string const& srv_name = sess.header->GetService();
         auto it = services_.find(srv_name);
@@ -155,7 +155,7 @@ namespace ucorf
                 return true;
             }
 
-            sess.transport->Send(sess.sess, &buf[0], buf.size(), [sess](boost_ec const& ec) {
+            sess.transport->Send(sess.sess, std::move(buf), [sess](boost_ec const& ec) {
                     if (ec)
                         ucorf_log_warn("response send error: %s. srv=%s, method=%s, msgid=%llu",
                             ec.message().c_str(), sess.header->GetService().c_str(),

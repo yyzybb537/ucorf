@@ -127,8 +127,8 @@ namespace ucorf
         header->Serialize(&buf[0], header->ByteSize());
         request->Serialize(&buf[header->ByteSize()], request->ByteSize());
         if (!response) {
-            co_chan<boost_ec> cc;
-            tp->Send(&buf[0], buf.size(), [=](boost_ec const& ec) { cc << ec; });
+            co_chan<boost_ec> cc(1);
+            tp->Send(std::move(buf), [=](boost_ec const& ec) { cc << ec; });
             boost_ec ec;
             cc >> ec;
             return ec;

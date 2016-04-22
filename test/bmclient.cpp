@@ -103,8 +103,8 @@ int main(int argc, char** argv)
 
             for (;;) {
                 auto now = std::chrono::system_clock::now();
-                boost_ec ec = stub.Echo(request, (EchoResponse*)nullptr);
 //                boost_ec ec = stub.Echo(request, (EchoResponse*)nullptr);
+                boost_ec ec = stub.Echo(request, &response);
                 if (ec) {
                     co_sleep(1);
                     ++g_error;

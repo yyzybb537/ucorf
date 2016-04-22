@@ -63,6 +63,11 @@ namespace ucorf
         ::network::SessionEntry &sess = ::boost::any_cast<::network::SessionEntry&>(id);
         sess->Send(data, bytes, cb);
     }
+    void NetTransportServer::Send(SessId id, std::vector<char> && buf, OnSndF const& cb)
+    {
+        ::network::SessionEntry &sess = ::boost::any_cast<::network::SessionEntry&>(id);
+        sess->Send(std::move(buf), cb);
+    }
     std::string NetTransportServer::LocalUrl() const
     {
         return url_;
@@ -125,6 +130,10 @@ namespace ucorf
     void NetTransportClient::Send(const void* data, size_t bytes, OnSndF const& cb)
     {
         c_.Send(data, bytes, cb);
+    }
+    void NetTransportClient::Send(std::vector<char> && buf, OnSndF const& cb)
+    {
+        c_.Send(std::move(buf), cb);
     }
     bool NetTransportClient::IsEstab()
     {

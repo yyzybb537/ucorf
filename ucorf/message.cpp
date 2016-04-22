@@ -1,4 +1,5 @@
 #include "message.h"
+#include <boost/pool/object_pool.hpp>
 
 namespace ucorf
 {

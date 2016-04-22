@@ -20,6 +20,7 @@ namespace ucorf
 
         virtual boost_ec Listen(std::string const& url);
         virtual void Send(SessId id, const void* data, size_t bytes, OnSndF const& cb = NULL);
+        virtual void Send(SessId id, std::vector<char> && buf, OnSndF const& cb = NULL);
         virtual std::string LocalUrl() const;
 
     private:
@@ -41,6 +42,7 @@ namespace ucorf
 
         virtual boost_ec Connect(std::string const& url);
         virtual void Send(const void* data, size_t bytes, OnSndF const& cb = NULL);
+        virtual void Send(std::vector<char> && buf, OnSndF const& cb = NULL);
         virtual bool IsEstab();
         virtual std::string RemoteUrl() const;
 

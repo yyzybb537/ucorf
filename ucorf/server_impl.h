@@ -46,7 +46,7 @@ namespace ucorf
         void OnDisconnected(ITransportServer *tp, SessId sess_id, boost_ec const& ec);
         size_t OnReceiveData(ITransportServer *tp, SessId sess_id, const char* data, size_t bytes);
 
-        bool DispatchMsg(Session sess, const char* data, size_t bytes);
+        bool DispatchMsg(Session & sess, const char* data, size_t bytes);
 
     private:
         typedef std::map<std::string, boost::shared_ptr<IService>> ServiceMap;
